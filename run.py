@@ -80,10 +80,16 @@ class Few_Shot_CLI(LightningCLI):
         )
 
     def parse_arguments(self) -> None:
-        """Rewrite for skipping check."""
+        """
+            Rewrite for skipping check.
+            note: torchmetrics==0.4.1  pytorch_lightning==1.3.8
+        """
         self.config = self.parser.parse_args(_skip_check = True)
     def on_train_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
-        """Rewrite for skipping check."""
+        """
+            Rewrite for skipping check.
+            new added
+        """
         log_dir = trainer.log_dir or trainer.default_root_dir
         config_path = os.path.join(log_dir, self.config_filename)
         self.parser.save(self.config, config_path, skip_none=False, skip_check=True)

@@ -107,3 +107,7 @@ It is quite simple to implement your own algorithm. most of algorithms only need
 
 #### Configuration
 **Need modification.** See [LightningCLI](https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_cli.html) for how a yaml configuration file works. For each algorithm, there needs one specific configuration file, though most of the configurations are the same across algorithms. Thus it is convenient to copy one configuration and change it for a new algorithm.
+
+#### Others
+1.pls obey the libraries edition claimed in requirements.txt
+2.RTX 3090 has only supported by CUDA 11+, so you should keep the torch and cuda matching if you are using 30 series GPU

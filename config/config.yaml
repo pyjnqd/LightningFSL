@@ -1,0 +1,70 @@
+data:
+  drop_last: false
+  is_DDP: false
+  is_meta: true
+  num_query: 15
+  test_batchsize: 8
+  test_num_task: 2000
+  test_shot: 5
+  train_batchsize: 2
+  train_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
+  train_dataset_name: miniImageNet
+  train_num_task_per_epoch: 1000
+  train_num_workers: 8
+  train_shot: 5
+  val_batchsize: 8
+  val_num_task: 1200
+  val_num_workers: 8
+  val_shot: 5
+  val_test_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
+  val_test_dataset_name: miniImageNet
+  way: 5
+is_test: false
+load_pretrained: false
+model:
+  backbone_name: resnet12
+  decay_scheduler: cosine
+  lr: 0.05
+  metric: cosine
+  normalize: true
+  num_query: 15
+  optim_type: sgd
+  scale_cls: 10.0
+  test_batch_size_per_gpu: 8
+  test_shot: 5
+  train_batch_size_per_gpu: 2
+  train_shot: 5
+  val_batch_size_per_gpu: 8
+  val_shot: 5
+  way: 5
+  weight_decay: 0.0005
+model_name: PN
+seed: 10
+trainer:
+  accelerator: null
+  callbacks:
+  - class_path: pytorch_lightning.callbacks.LearningRateMonitor
+    init_args:
+      logging_interval: step
+  - class_path: pytorch_lightning.callbacks.ModelCheckpoint
+    init_args:
+      mode: max
+      monitor: val/acc
+      save_last: true
+      verbose: true
+  - class_path: callbacks.SetSeedCallback
+    init_args:
+      is_DDP: false
+      seed: 10
+  fast_dev_run: false
+  gpus:
+  - 3
+  logger:
+    class_path: pytorch_lightning.loggers.TensorBoardLogger
+    init_args:
+      name: ProtoNet/
+      save_dir: ./results/
+  max_epochs: 60
+  replace_sampler_ddp: false
+  resume_from_checkpoint: null
+  sync_batchnorm: false

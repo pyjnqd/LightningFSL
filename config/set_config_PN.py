@@ -1,25 +1,24 @@
 from sacred import Experiment
 import yaml
-import time 
-import os
 ex = Experiment("ProtoNet", save_git_info=False)
 
 @ex.config
 def config():
     config_dict = {}
 
-    #if training, set to False
+    # if training, set to False
     config_dict["load_pretrained"] = False
-    #if training, set to False
-    config_dict["is_test"] = True
+    # if training, set to False
+    config_dict["is_test"] = False
+
     if config_dict["is_test"]:
-        #if testing, specify the total rounds of testing. Default: 5
+        # if testing, specify the total rounds of testing. Default: 5
         config_dict["num_test"] = 5
         config_dict["load_pretrained"] = True
-        #specify pretrained path for testing.
+        # specify pretrained path for testing.
     if config_dict["load_pretrained"]:
         config_dict["pre_trained_path"] = "../results/ProtoNet/no_normalization/version_0/checkpoints/epoch=59-step=29999.ckpt"
-        #only load the backbone.
+        # only load the backbone.
         config_dict["load_backbone_only"] = False
         
     #Specify the model name, which should match the name of file
@@ -37,8 +36,8 @@ def config():
     config_dict["seed"] = seed
 
     #The logging dirname: logdir/exp_name/
-    log_dir = "../results/"
-    exp_name = "ProtoNet/no_normalization/version_0/5shot"
+    log_dir = "./results/"
+    exp_name = "ProtoNet/"
     
     #Three components of a Lightning Running System
     trainer = {}
@@ -51,17 +50,17 @@ def config():
 
     ###important###
 
-    #debugging mode
+    #debugging mode, for example doing val epoch after achieving one training epoch 
     trainer["fast_dev_run"] = False
 
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1,2,3]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [0]
+        trainer["gpus"] = [3]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
@@ -90,10 +89,10 @@ def config():
 
     
 
-    ##################shared model and datamodule configuration###########################
+    ##################shared model and datamodule configuration#########
 
     #important
-    per_gpu_train_batchsize = 2
+    per_gpu_train_batchsize = 2 # 每個GPU
     train_shot = 5
     test_shot = 5
 
@@ -112,11 +111,11 @@ def config():
     #that contains the datamodule.
     data["train_dataset_name"] = "miniImageNet"
 
-    data["train_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
 
     data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
     #determine whether meta-learning.
     data["is_meta"] = True
     data["train_num_workers"] = 8
@@ -180,6 +179,6 @@ def main(_config):
     config_dict = _config["config_dict"]
     file_ = 'config/config.yaml'
     stream = open(file_, 'w')
-    yaml.safe_dump(config_dict, stream=stream,default_flow_style=False)
+    yaml.safe_dump(config_dict, stream=stream, default_flow_style=False)
 
     

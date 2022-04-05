@@ -4,7 +4,7 @@ from architectures import get_backbone
 from typing import Tuple, List, Optional, Union, Dict
 import torch
 import torch.nn.functional as F
-from torchmetrics import Accuracy, AverageMeter
+from torchmetrics import Accuracy, AverageMeter # torchmetric 0.4.1
 class BaseFewShotModule(LightningModule):
     r"""Template for all few-shot learning models.
     """
@@ -146,6 +146,7 @@ class BaseFewShotModule(LightningModule):
         r"""Set basic logging metrics for few-shot learning.
         """
         for split in ["train", "val", "test"]:
+            # setattr(self, f"{split}_loss", AverageMeter()) # abandoned
             setattr(self, f"{split}_loss", AverageMeter())
             setattr(self, f"{split}_acc", Accuracy())
     
