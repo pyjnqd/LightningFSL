@@ -17,7 +17,7 @@ def config():
         config_dict["load_pretrained"] = True
         # specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "../results/ProtoNet/no_normalization/version_0/checkpoints/epoch=59-step=29999.ckpt"
+        config_dict["pre_trained_path"] = ""
         # only load the backbone.
         config_dict["load_backbone_only"] = False
         
@@ -56,18 +56,18 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [0,1,2,3]
+        trainer["gpus"] = [2,3]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [3]
+        trainer["gpus"] = [2]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
     trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 60
+    trainer["max_epochs"] = 6000
 
     # potential functionalities added to the trainer.
     trainer["callbacks"] = [{"class_path": "pytorch_lightning.callbacks.LearningRateMonitor", 
@@ -86,6 +86,7 @@ def config():
                         "init_args": {"save_dir": log_dir,"name": exp_name}
                         }
     trainer["replace_sampler_ddp"] = False
+    # trainer["profiler"] = "pytorch"
 
     
 
@@ -97,7 +98,7 @@ def config():
     test_shot = 5
 
     #less important
-    per_gpu_val_batchsize = 8
+    per_gpu_val_batchsize = 2
     per_gpu_test_batchsize = 8
     way = 5
     val_shot = 5
@@ -109,16 +110,17 @@ def config():
 
     #The name of dataset, which should match the name of file
     #that contains the datamodule.
-    data["train_dataset_name"] = "miniImageNet"
+    data["train_dataset_name"] = "tieredImageNet"
 
-    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
+    data["train_data_root"] = "/dev/shm/wuhao/tiered-imagenet/images_lmdb"
+    # /dev/shm/wuhao/mini_imagenet/images_imagefolder
+    # /home/wuhao/data/mini_imagenet/images_imagefolder
+    data["val_test_dataset_name"] = "tieredImageNet"
 
-    data["val_test_dataset_name"] = "miniImageNet"
-
-    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
+    data["val_test_data_root"] = "/dev/shm/wuhao/tiered-imagenet/images_lmdb"
     #determine whether meta-learning.
     data["is_meta"] = True
-    data["train_num_workers"] = 8
+    data["train_num_workers"] = 28
     #the number of tasks
     data["train_num_task_per_epoch"] = 1000
     data["val_num_task"] = 1200
@@ -126,12 +128,12 @@ def config():
     
     
     #less important
-    data["train_batchsize"] = num_gpus*per_gpu_train_batchsize
-    data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-    data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    data["train_batchsize"] = num_gpus * per_gpu_train_batchsize
+    data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
+    data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
     data["test_shot"] = test_shot
     data["train_shot"] = train_shot
-    data["val_num_workers"] = 8
+    data["val_num_workers"] = 36
     data["is_DDP"] = True if multi_gpu else False
     data["way"] = way
     data["val_shot"] = val_shot
@@ -144,7 +146,8 @@ def config():
 
     #The name of feature extractor, which should match the name of file
     #that contains the model.
-    model["backbone_name"] = "resnet12"
+    # if you wnnan use transformer-based backbone, pls quote in the form of vit_pytorch.xxx
+    model["backbone_name"] = "vit_pytorch.vit_for_small_dataset"
     #the initial learning rate
     model["lr"] = 0.1*data["train_batchsize"]/4
 

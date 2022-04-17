@@ -31,6 +31,9 @@ class Few_Shot_CLI(LightningCLI):
         super().__init__(**kwargs)
 
     def add_arguments_to_parser(self, parser: LightningArgumentParser) -> None:
+        """
+            需要被重写，在core args基础上之外的参数
+        """
         parser.add_argument(
             'is_test',
             type=bool,
@@ -83,8 +86,10 @@ class Few_Shot_CLI(LightningCLI):
         """
             Rewrite for skipping check.
             note: torchmetrics==0.4.1  pytorch_lightning==1.3.8
+            parse_args继承自jsonargsparse,该第三方库根据sys.argv()中的link解析config对象并返回
         """
         self.config = self.parser.parse_args(_skip_check = True)
+
     def on_train_start(self, trainer: Trainer, pl_module: LightningModule) -> None:
         """
             Rewrite for skipping check.
@@ -122,7 +127,7 @@ class Few_Shot_CLI(LightningCLI):
                 acc_list.append(result[0]['test/acc']*100)
             acc_list = np.array(acc_list)
             mean = np.mean(acc_list)
-            confidence_interval = np.std(acc_list)*1.96
+            confidence_interval = np.std(acc_list)*1.96 # 95%
             with open(os.path.join(self.trainer.log_dir, "test_result.json"), 'w') as f:
                 json.dump({'mean':mean, "confidence interval": confidence_interval}, f)
         else:
@@ -135,3 +140,5 @@ if __name__ == '__main__':
         # seed_everything_default=1234,
         save_config_callback = RefinedSaverCallback
     )
+
+

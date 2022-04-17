@@ -7,22 +7,22 @@ data:
   test_num_task: 2000
   test_shot: 5
   train_batchsize: 2
-  train_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
-  train_dataset_name: miniImageNet
+  train_data_root: /dev/shm/wuhao/tiered-imagenet/images_lmdb
+  train_dataset_name: tieredImageNet
   train_num_task_per_epoch: 1000
-  train_num_workers: 8
+  train_num_workers: 28
   train_shot: 5
-  val_batchsize: 8
+  val_batchsize: 2
   val_num_task: 1200
-  val_num_workers: 8
+  val_num_workers: 36
   val_shot: 5
-  val_test_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
-  val_test_dataset_name: miniImageNet
+  val_test_data_root: /dev/shm/wuhao/tiered-imagenet/images_lmdb
+  val_test_dataset_name: tieredImageNet
   way: 5
 is_test: false
 load_pretrained: false
 model:
-  backbone_name: resnet12
+  backbone_name: vit_pytorch.vit_for_small_dataset
   decay_scheduler: cosine
   lr: 0.05
   metric: cosine
@@ -34,7 +34,7 @@ model:
   test_shot: 5
   train_batch_size_per_gpu: 2
   train_shot: 5
-  val_batch_size_per_gpu: 8
+  val_batch_size_per_gpu: 2
   val_shot: 5
   way: 5
   weight_decay: 0.0005
@@ -58,13 +58,13 @@ trainer:
       seed: 10
   fast_dev_run: false
   gpus:
-  - 3
+  - 2
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
       name: ProtoNet/
       save_dir: ./results/
-  max_epochs: 60
+  max_epochs: 6000
   replace_sampler_ddp: false
   resume_from_checkpoint: null
   sync_batchnorm: false

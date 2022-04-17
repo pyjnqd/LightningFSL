@@ -41,5 +41,3 @@ class miniImageNetMixedwithContrastive(miniImageNet):
 def return_class():
     return miniImageNetMixedwithContrastive
 
-if __name__ == '__main__':
-    pass

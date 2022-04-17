@@ -32,6 +32,3 @@ class miniImageNetContrastive(miniImageNet):
 
 def return_class():
     return miniImageNetContrastive
-
-if __name__ == '__main__':
-    pass

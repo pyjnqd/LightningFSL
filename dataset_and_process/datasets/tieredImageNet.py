@@ -2,9 +2,9 @@ from torchvision import transforms
 import os
 import numpy as np
 from torchvision.datasets import ImageFolder
+from .ImageFolderLMDB import ImageFolderLMDB
 
-
-class tieredImageNet(ImageFolder):
+class tieredImageNet(ImageFolderLMDB):
     r"""The standard tieredImageNet dataset. ::
             
        root
@@ -25,6 +25,7 @@ class tieredImageNet(ImageFolder):
     def __init__(self, root: str, mode: str):
         assert mode in ["train", "val", "test"]
         IMAGE_PATH = os.path.join(root, mode)
+        LMDB_PATH = os.path.join(root, mode+'.lmdb')
         if mode == 'val' or mode == 'test':
             image_size = 84
             self.transform = transforms.Compose([
@@ -43,12 +44,9 @@ class tieredImageNet(ImageFolder):
                 transforms.Normalize(np.array([0.4783, 0.4564, 0.4101]),
                                     np.array([0.2634, 0.2577, 0.2709]))])
 
-        super().__init__(IMAGE_PATH, transform)
+        super().__init__(LMDB_PATH, self.transform)
         self.label = self.targets
 
 
 def return_class():
     return tieredImageNet
-
-if __name__ == '__main__':
-    pass

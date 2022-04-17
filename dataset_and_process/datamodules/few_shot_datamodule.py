@@ -145,7 +145,7 @@ class FewShotDataModule(LightningDataModule):
             self.way, self.test_shot+self.num_query, self.test_batch_size, 
             self.is_DDP, self.drop_last
             )
-        
+
     def setup(self, stage):
         self.set_train_dataset()
         self.set_val_dataset()
@@ -164,6 +164,8 @@ class FewShotDataModule(LightningDataModule):
             sampler = self.train_sampler,
             pin_memory = True,
         )
+
+
         return loader
 
     def val_dataloader(self):
@@ -186,7 +188,3 @@ class FewShotDataModule(LightningDataModule):
         )
         return loader
 
-if __name__ == '__main__':
-    a = FewShotDataModule()
-    # a.set_train_dataset()
-    # print(a.train_dataloader().sampler)
