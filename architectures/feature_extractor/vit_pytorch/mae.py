@@ -4,6 +4,7 @@ import torch.nn.functional as F
 from einops import repeat
 
 from vit_pytorch.vit import Transformer
+from vit_pytorch.vit import create_model as create_vit_model
 
 class MAE(nn.Module):
     def __init__(
@@ -94,3 +95,11 @@ class MAE(nn.Module):
 
         recon_loss = F.mse_loss(pred_pixel_values, masked_patches)
         return recon_loss
+
+def create_model():
+    return MAE(
+        encoder = create_vit_model(),
+        masking_ratio = 0.75,   # the paper recommended 75% masked patches
+        decoder_dim = 512,      # paper showed good results with just 512
+        decoder_depth = 6       # anywhere from 1 to 8 
+    )

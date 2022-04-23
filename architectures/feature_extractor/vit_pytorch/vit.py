@@ -102,12 +102,12 @@ class ViT(nn.Module):
 
         self.pool = pool
         self.to_latent = nn.Identity()
-
+        
         self.mlp_head = nn.Sequential(
             nn.LayerNorm(dim),
             # nn.Linear(dim, num_classes)
         )
-
+        self.outdim = dim
     def forward(self, img):
         x = self.to_patch_embedding(img)
         b, n, _ = x.shape
@@ -131,11 +131,12 @@ def create_model():
     return ViT(
         image_size=84,
         patch_size=21,
-        dim=640,
-        depth=6,
+        dim=1024,
+        depth=12,
         heads=16,
-        mlp_dim=1024,
+        mlp_dim=2048,
         channels=3,
         dropout=0.1,
-        emb_dropout=0.1
+        emb_dropout=0.1,
+        pool='cls'
     )

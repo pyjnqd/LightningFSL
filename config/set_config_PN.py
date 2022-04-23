@@ -24,6 +24,7 @@ def config():
     #Specify the model name, which should match the name of file
     #that contains the LightningModule
     config_dict["model_name"] = "PN"
+    config_dict["datamodule_name"] = "few_shot_datamodule"
  
     
 
@@ -60,7 +61,7 @@ def config():
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [2]
+        trainer["gpus"] = [1]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
@@ -110,14 +111,14 @@ def config():
 
     #The name of dataset, which should match the name of file
     #that contains the datamodule.
-    data["train_dataset_name"] = "tieredImageNet"
+    data["train_dataset_name"] = "miniImageNet"
 
-    data["train_data_root"] = "/dev/shm/wuhao/tiered-imagenet/images_lmdb"
+    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_lmdb"
     # /dev/shm/wuhao/mini_imagenet/images_imagefolder
     # /home/wuhao/data/mini_imagenet/images_imagefolder
-    data["val_test_dataset_name"] = "tieredImageNet"
+    data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "/dev/shm/wuhao/tiered-imagenet/images_lmdb"
+    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_lmdb"
     #determine whether meta-learning.
     data["is_meta"] = True
     data["train_num_workers"] = 28
@@ -129,8 +130,13 @@ def config():
     
     #less important
     data["train_batchsize"] = num_gpus * per_gpu_train_batchsize
-    data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
-    data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
+    data["is_FSL_val"]=True # update for new datamodule
+    if data["is_FSL_val"]:
+        data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
+        data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    else:
+        data["val_batchsize"] = 1024
+        data["test_batchsize"] = 1024
     data["test_shot"] = test_shot
     data["train_shot"] = train_shot
     data["val_num_workers"] = 36
@@ -147,7 +153,7 @@ def config():
     #The name of feature extractor, which should match the name of file
     #that contains the model.
     # if you wnnan use transformer-based backbone, pls quote in the form of vit_pytorch.xxx
-    model["backbone_name"] = "vit_pytorch.vit_for_small_dataset"
+    model["backbone_name"] = "resnet12"
     #the initial learning rate
     model["lr"] = 0.1*data["train_batchsize"]/4
 

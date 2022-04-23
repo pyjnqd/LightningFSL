@@ -1,47 +1,47 @@
 data:
   drop_last: false
-  is_DDP: false
-  is_meta: true
+  is_DDP: true
+  is_meta: false
+  num_gpus: 2
   num_query: 15
-  test_batchsize: 8
+  record_root: /dev/shm/wuhao
+  test_batchsize: 16
   test_num_task: 2000
   test_shot: 5
-  train_batchsize: 2
-  train_data_root: /dev/shm/wuhao/tiered-imagenet/images_lmdb
-  train_dataset_name: tieredImageNet
-  train_num_task_per_epoch: 1000
-  train_num_workers: 28
-  train_shot: 5
+  train_batchsize: 128
+  train_dataset: ilsvrc_2012
+  train_num_workers: 24
   val_batchsize: 2
   val_num_task: 1200
-  val_num_workers: 36
+  val_num_workers: 16
   val_shot: 5
-  val_test_data_root: /dev/shm/wuhao/tiered-imagenet/images_lmdb
-  val_test_dataset_name: tieredImageNet
+  val_test_dataset: ilsvrc_2012
   way: 5
+datamodule_name: Simple_MD_datamodule
 is_test: false
 load_pretrained: false
 model:
-  backbone_name: vit_pytorch.vit_for_small_dataset
+  backbone_name: timm_models.swin_tiny_patch4_window7_224
   decay_scheduler: cosine
   lr: 0.05
-  metric: cosine
-  normalize: true
+  num_classes: 712
   num_query: 15
-  optim_type: sgd
-  scale_cls: 10.0
+  optim_type: adam
+  task_classifier_name: proto_head
+  task_classifier_params:
+    learn_scale: false
+    metric: cosine
+    normalize: false
   test_batch_size_per_gpu: 8
   test_shot: 5
-  train_batch_size_per_gpu: 2
-  train_shot: 5
-  val_batch_size_per_gpu: 2
+  use_pickle: false
+  val_batch_size_per_gpu: 1
   val_shot: 5
   way: 5
   weight_decay: 0.0005
-model_name: PN
-seed: 10
+model_name: CE_pretrain
 trainer:
-  accelerator: null
+  accelerator: ddp
   callbacks:
   - class_path: pytorch_lightning.callbacks.LearningRateMonitor
     init_args:
@@ -54,17 +54,20 @@ trainer:
       verbose: true
   - class_path: callbacks.SetSeedCallback
     init_args:
-      is_DDP: false
-      seed: 10
+      is_DDP: true
+      seed: 20
   fast_dev_run: false
   gpus:
   - 2
+  - 3
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
-      name: ProtoNet/
-      save_dir: ./results/
-  max_epochs: 6000
+      name: CE_pretrain
+      save_dir: ./results
+  max_epochs: 100
+  plugins:
+  - class_path: plugins.modified_DDPPlugin
   replace_sampler_ddp: false
   resume_from_checkpoint: null
-  sync_batchnorm: false
+  sync_batchnorm: true

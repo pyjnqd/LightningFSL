@@ -8,10 +8,8 @@ class FewShotDataModule(LightningDataModule):
     r"""A general datamodule for few-shot image classification.
 
     Args:
-        train_dataset_name: The name of the training dataset construction class.
-        val_test_dataset_name: The name of the val/test dataset construction class.
-        train_data_root: Root directory path of train data.
-        val_test_data_root: Root directory path of val/test data.
+        dataset_name: The name of the dataset construction class.
+        data_root: Root directory path of data.
         is_meta: whether implementing meta-learning during training.
         train_batchsize: The batch size of training.
         val_batchsize: The batch size of validation.
@@ -42,6 +40,8 @@ class FewShotDataModule(LightningDataModule):
         train_dataset_name: str = "miniImageNet",
         val_test_dataset_name: str = "miniImageNet",
         train_data_root: str = '',
+        # val_data_root: str = '',
+        # test_data_root: str = '',
         val_test_data_root: str = '',
         is_meta: bool = False,
         train_batchsize: int = 32,
@@ -62,10 +62,12 @@ class FewShotDataModule(LightningDataModule):
         num_gpus: int = 1,
         train_dataset_params: Dict = {},
         val_test_dataset_params: Dict = {},
+        is_FSL_val: bool = True,
     ) -> None:
         super().__init__()
         self.train_data_root = train_data_root
-        self.val_test_data_root = val_test_data_root
+        self.val_data_root = val_test_data_root
+        self.test_data_root = val_test_data_root
         self.train_dataset_name = train_dataset_name
         self.val_test_dataset_name = val_test_dataset_name
         self.train_num_workers = train_num_workers
@@ -76,7 +78,11 @@ class FewShotDataModule(LightningDataModule):
         self.test_batch_size = test_batchsize
         self.is_meta = is_meta
         self.train_sampler = None
+        self.val_sampler = None
+        self.test_sampler = None
         self.train_batch_sampler = None
+        self.val_batch_sampler = None
+        self.test_batch_sampler = None
         self.train_num_task_per_epoch = train_num_task_per_epoch
         self.val_num_task = val_num_task
         self.test_num_task = test_num_task
@@ -89,19 +95,17 @@ class FewShotDataModule(LightningDataModule):
         self.num_gpus = num_gpus
         self.train_dataset_params = train_dataset_params
         self.val_test_dataset_params = val_test_dataset_params
-        
+        self.is_FSL_val = is_FSL_val
     @property
     def train_dataset_cls(self):
         """Obtain the dataset class
         """
         return get_dataset(self.train_dataset_name)
-    
-    @property
+    @property    
     def val_test_dataset_cls(self):
         """Obtain the dataset class
         """
         return get_dataset(self.val_test_dataset_name)
-
     
     def set_train_dataset(self):
         self.train_dataset = self.train_dataset_cls(
@@ -111,14 +115,16 @@ class FewShotDataModule(LightningDataModule):
         )
     def set_val_dataset(self):
         self.val_dataset = self.val_test_dataset_cls(
-            self.val_test_data_root,
+            self.val_data_root,
             mode="val",
             **self.val_test_dataset_params
         )
     def set_test_dataset(self):
         self.test_dataset = self.val_test_dataset_cls(
-            self.val_test_data_root,
+            self.test_data_root,
             mode="test",
+            # mode="all",#ISIC
+            # mode=False,#omniglot
             **self.val_test_dataset_params
         )
     def set_sampler(self):
@@ -134,22 +140,26 @@ class FewShotDataModule(LightningDataModule):
         elif self.is_DDP:
             self.train_sampler = DistributedSampler(self.train_dataset)
 
-        self.val_batch_sampler = CategoriesSampler(
-            self.val_dataset.label, self.val_num_task,
-            self.way, self.val_shot+self.num_query, self.val_batch_size, 
-            self.is_DDP, self.drop_last
-            )
+        if self.is_FSL_val:
+            self.val_batch_sampler = CategoriesSampler(
+                self.val_dataset.label, self.val_num_task,
+                self.way, self.val_shot+self.num_query, self.val_batch_size, 
+                self.is_DDP, self.drop_last
+                )
 
-        self.test_batch_sampler = CategoriesSampler(
-            self.test_dataset.label, self.test_num_task,
-            self.way, self.test_shot+self.num_query, self.test_batch_size, 
-            self.is_DDP, self.drop_last
-            )
-
+            self.test_batch_sampler = CategoriesSampler(
+                self.test_dataset.label, self.test_num_task,
+                self.way, self.test_shot+self.num_query, self.test_batch_size, 
+                self.is_DDP, self.drop_last
+                )
+        elif self.is_DDP:
+            self.val_sampler = DistributedSampler(self.val_dataset)
+            #self.test_sampler = DistributedSampler(self.test_dataset)
+        
     def setup(self, stage):
         self.set_train_dataset()
         self.set_val_dataset()
-        self.set_test_dataset()
+        #self.set_test_dataset() # imagenet 没有带标签test
         self.set_sampler()
 
     def train_dataloader(self):
@@ -164,16 +174,17 @@ class FewShotDataModule(LightningDataModule):
             sampler = self.train_sampler,
             pin_memory = True,
         )
-
-
         return loader
 
     def val_dataloader(self):
         loader = DataLoader(
             self.val_dataset,
+            batch_size = 1 if self.val_batch_sampler is not None\
+                         else self.val_batch_size//self.num_gpus,
             shuffle = False,
             num_workers = self.val_num_workers,
             batch_sampler = self.val_batch_sampler,
+            sampler = self.val_sampler,
             pin_memory = True
         )
         return loader
@@ -181,10 +192,25 @@ class FewShotDataModule(LightningDataModule):
     def test_dataloader(self):
         loader = DataLoader(
             self.test_dataset,
+            batch_size = 1 if self.test_batch_sampler is not None\
+                         else self.test_batch_size//self.num_gpus,
             shuffle = False,
             num_workers = self.val_num_workers,
             batch_sampler = self.test_batch_sampler,
+            sampler = self.test_sampler,
             pin_memory = True
         )
+        # loader = DataLoader(
+        #     self.test_dataset,
+        #     batch_size=128,
+        #     shuffle = False,
+        #     num_workers = self.val_num_workers,
+        #     # batch_sampler = self.test_batch_sampler,
+        #     pin_memory = True
+        # )
         return loader
 
+if __name__ == '__main__':
+    a = FewShotDataModule()
+    # a.set_train_dataset()
+    # print(a.train_dataloader().sampler)

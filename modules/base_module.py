@@ -104,7 +104,7 @@ class BaseFewShotModule(LightningModule):
         shot = getattr(self.hparams, f"{mode}_shot")
         # label
         # print(batch[0].shape)
-        logits = foward_function(batch, batch_size_per_gpu,self.hparams.way, shot)
+        logits = foward_function(batch, batch_size_per_gpu, self.hparams.way, shot)
         # import pdb
         # pdb.set_trace()
         label = torch.unsqueeze(self.label, 0).repeat(batch_size_per_gpu, 1).reshape(-1).to(logits.device)

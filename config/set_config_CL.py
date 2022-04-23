@@ -31,6 +31,7 @@ def config():
     #Specify the model name, which should match the name of file
     #that contains the LightningModule
     config_dict["model_name"] = "CL"
+    config_dict["datamodule_name"] = "few_shot_datamodule"
  
     
 
@@ -137,8 +138,13 @@ def config():
     #less important
     data["num_gpus"] = num_gpus
     data["train_batchsize"] = num_gpus*per_gpu_train_batchsize
-    data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-    data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    data["is_FSL_val"]=True # update for new datamodule
+    if data["is_FSL_val"]:
+        data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
+        data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    else:
+        data["val_batchsize"] = 1024
+        data["test_batchsize"] = 1024
     data["test_shot"] = test_shot
     data["train_shot"] = train_shot
     data["val_num_workers"] = 8

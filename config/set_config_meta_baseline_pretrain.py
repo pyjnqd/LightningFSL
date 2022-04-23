@@ -23,13 +23,14 @@ def config():
         config_dict["load_pretrained"] = True
         #specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "../results/CC/version_11/checkpoints/epoch=52-step=26499.ckpt"
+        config_dict["pre_trained_path"] = ""
         #only load the backbone.
         config_dict["load_backbone_only"] = False
 
     #Specify the model name, which should match the name of file
     #that contains the LightningModule
     config_dict["model_name"] = "CE_pretrain"
+    config_dict["datamodule_name"] = "few_shot_datamodule"
  
     
 
@@ -66,7 +67,7 @@ def config():
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [2]
+        trainer["gpus"] = [3]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
@@ -114,13 +115,13 @@ def config():
     #The name of dataset, which should match the name of file
     #that contains the datamodule.
     
-    data["train_dataset_name"] = "miniImageNet"
+    data["train_dataset_name"] = "ImageNet"
 
-    data["train_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["train_data_root"] = "/home/wuhao/data/imagenet"
 
-    data["val_test_dataset_name"] = "miniImageNet"
+    data["val_test_dataset_name"] = "ImageNet"
 
-    data["val_test_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["val_test_data_root"] = "/home/wuhao/data/imagenet"
     #determine whether meta-learning.
     data["train_batchsize"] = 128
     
@@ -132,8 +133,13 @@ def config():
     
     #less important
     data["num_gpus"] = num_gpus
-    data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-    data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    data["is_FSL_val"]=True # update for new datamodule
+    if data["is_FSL_val"]:
+        data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
+        data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    else:
+        data["val_batchsize"] = 1024
+        data["test_batchsize"] = 1024
     data["test_shot"] = test_shot
     data["val_num_workers"] = 8
     data["is_DDP"] = True if multi_gpu else False
@@ -142,7 +148,7 @@ def config():
     data["num_query"] = num_query
     data["drop_last"] = False
     data["is_meta"] = False
-
+    
     ##################model configuration###########################
 
     #important

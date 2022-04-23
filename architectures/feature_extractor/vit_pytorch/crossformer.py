@@ -211,7 +211,7 @@ class CrossFormer(nn.Module):
         local_window_size = 7,
         cross_embed_kernel_sizes = ((4, 8, 16, 32), (2, 4), (2, 4), (2, 4)),
         cross_embed_strides = (4, 2, 2, 2),
-        num_classes = 1000,
+        # num_classes = 1000,
         attn_dropout = 0.,
         ff_dropout = 0.,
         channels = 3
@@ -252,12 +252,22 @@ class CrossFormer(nn.Module):
 
         self.to_logits = nn.Sequential(
             Reduce('b c h w -> b c', 'mean'),
-            nn.Linear(last_dim, num_classes)
+            # nn.Linear(last_dim, num_classes)
         )
-
+        self.outdim = last_dim
     def forward(self, x):
         for cel, transformer in self.layers:
             x = cel(x)
             x = transformer(x)
+        x = self.to_logits(x)
+        x = torch.unsqueeze(torch.unsqueeze(x, -1), -1)
+        return x
 
-        return self.to_logits(x)
+def create_model():
+    return CrossFormer(
+        # num_classes = 712,                # number of output classes
+        dim = (64, 128, 256, 512),         # dimension at each stage
+        depth = (2, 2, 8, 2),              # depth of transformer at each stage
+        global_window_size = (8, 4, 2, 1), # global window sizes at each stage
+        local_window_size = 7,             # local window size (can be customized for each stage, but in paper, held constant at 7 for all stages)
+    )

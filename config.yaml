@@ -3,8 +3,8 @@ trainer:
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
-      name: ProtoNet/
-      save_dir: ./results/
+      name: CE_pretrain
+      save_dir: ./results
       version: null
       log_graph: false
       default_hp_metric: true
@@ -25,7 +25,7 @@ trainer:
       auto_insert_metric_name: true
   - class_path: callbacks.SetSeedCallback
     init_args:
-      seed: 10
+      seed: 20
       is_DDP: false
   default_root_dir: null
   gradient_clip_val: 0.0
@@ -81,49 +81,50 @@ trainer:
   multiple_trainloader_mode: max_size_cycle
   stochastic_weight_avg: false
 model:
-  backbone_name: ViT
+  backbone_name: vit_pytorch.crossformer
   way: 5
-  train_shot: 5
+  train_shot: null
   val_shot: 5
   test_shot: 5
   num_query: 15
-  train_batch_size_per_gpu: 2
-  val_batch_size_per_gpu: 8
+  train_batch_size_per_gpu: null
+  val_batch_size_per_gpu: 1
   test_batch_size_per_gpu: 8
-  lr: 0.05
+  lr: 0.07500000000000001
   weight_decay: 0.0005
   decay_scheduler: cosine
   optim_type: sgd
   decay_power: null
-  metric: cosine
-  normalize: true
-  scale_cls: 10.0
-data:
-  train_dataset_name: tieredImageNet
-  val_test_dataset_name: tieredImageNet
-  train_data_root: /home/wuhao/data/tiered_imagenet
-  val_test_data_root: /home/wuhao/data/tiered_imagenet
-  is_meta: true
-  train_batchsize: 2
-  val_batchsize: 8
-  test_batchsize: 8
-  train_num_workers: 0
-  val_num_workers: 0
-  is_DDP: false
-  train_num_task_per_epoch: 1000
-  val_num_task: 1200
-  test_num_task: 2000
-  way: 5
-  train_shot: 5
-  val_shot: 5
-  test_shot: 5
-  num_query: 15
-  drop_last: false
-  num_gpus: 1
+  num_classes: 712
+  task_classifier_name: proto_head
+  task_classifier_params:
+    metric: cosine
+    normalize: false
+  use_pickle: false
 is_test: false
-model_name: PN
+model_name: CE_pretrain
+datamodule_name: Simple_MD_datamodule
 load_pretrained: false
 pre_trained_path: ''
 load_backbone_only: false
 num_test: 5
-seed: 10
+data:
+  drop_last: false
+  is_DDP: false
+  is_FSL_val: true
+  is_meta: false
+  num_gpus: 1
+  num_query: 15
+  record_root: /dev/shm/wuhao
+  test_batchsize: 8
+  test_num_task: 2000
+  test_shot: 5
+  train_batchsize: 96
+  train_dataset: ilsvrc_2012
+  train_num_workers: 16
+  val_batchsize: 1
+  val_num_task: 1200
+  val_num_workers: 16
+  val_shot: 5
+  val_test_dataset: ilsvrc_2012
+  way: 5

@@ -5,7 +5,7 @@ class modified_DDPPlugin(DDPPlugin):
        Turn down "find_unused_parameters" if possible, in order to improve performance.
     """
     def __init__(self, 
-        find_unused_parameters: bool = False,
+        find_unused_parameters: bool = False, 
         parallel_devices = None,
         num_nodes = None,
         cluster_environment = None,
