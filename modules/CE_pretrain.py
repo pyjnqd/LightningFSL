@@ -26,6 +26,7 @@ class CE_Pretrainer(BaseFewShotModule):
         decay_epochs: Union[List, Tuple, None] = None,
         decay_power: Optional[float] = None,  
         backbone_kwargs: Dict = {},
+        warm_up: int = 0,
         **kwargs
     ) -> None:
         """   
@@ -65,7 +66,7 @@ class CE_Pretrainer(BaseFewShotModule):
             test_shot=test_shot, num_query=num_query, 
             val_batch_size_per_gpu=val_batch_size_per_gpu, test_batch_size_per_gpu=test_batch_size_per_gpu,
             lr=lr, weight_decay=weight_decay, decay_scheduler=decay_scheduler, optim_type=optim_type,
-            decay_epochs=decay_epochs, decay_power=decay_power, backbone_kwargs = backbone_kwargs
+            decay_epochs=decay_epochs, decay_power=decay_power, warm_up=warm_up, backbone_kwargs = backbone_kwargs
         )
         self.classifier = nn.Linear(self.backbone.outdim, num_classes)
         self.val_test_classifier = get_classifier(task_classifier_name, **task_classifier_params)
@@ -83,8 +84,9 @@ class CE_Pretrainer(BaseFewShotModule):
         data, _ = batch
         data = self.backbone(data)
         # timm models输出的格式dim不是4，临时改一下shape
-        import torch
-        data = torch.unsqueeze(torch.unsqueeze(data, -1), -1)
+        if data.dim() == 2:
+            import torch
+            data = torch.unsqueeze(torch.unsqueeze(data, -1), -1)
         data = data.reshape([batch_size, -1] + list(data.shape[-3:]))
         data_support = data[:, :num_support_samples]
         data_query = data[:, num_support_samples:]

@@ -25,6 +25,7 @@ class BaseFewShotModule(LightningModule):
         optim_type: str = "sgd",
         decay_epochs: Union[List, Tuple, None] = None,
         decay_power: Optional[float] = None,
+        warm_up: int = 0,
         backbone_kwargs: Dict = {}
     ) -> None:
         """

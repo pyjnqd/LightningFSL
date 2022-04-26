@@ -97,14 +97,14 @@ class LMDBDataset(data.ConcatDataset):
                                      std=[0.229, 0.224, 0.225])
         if split == "TRAIN":
             transform = transforms.Compose([
-                transforms.RandomResizedCrop(224),
+                transforms.RandomResizedCrop(84),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize])
         else:
             transform = transforms.Compose([
-                transforms.Resize([256, 256]),
-                transforms.CenterCrop(224),
+                transforms.Resize([92, 92]),
+                transforms.CenterCrop(84),
                 transforms.ToTensor(),
                 normalize])
         for record_file in os.listdir(dataset_dir):

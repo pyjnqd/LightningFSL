@@ -61,7 +61,7 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
@@ -72,7 +72,7 @@ def config():
     trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 100
+    trainer["max_epochs"] = 350
 
     # potential functionalities added to the trainer.
     trainer["callbacks"] = [{"class_path": "pytorch_lightning.callbacks.LearningRateMonitor", 
@@ -121,9 +121,9 @@ def config():
 
 
     #determine whether meta-learning.
-    data["train_batchsize"] = 128
+    data["train_batchsize"] = 1024
     
-    data["train_num_workers"] = 24
+    data["train_num_workers"] = 20
     #the number of tasks
     data["val_num_task"] = 1200
     data["test_num_task"] = 2000
@@ -131,8 +131,8 @@ def config():
     
     #less important
     data["num_gpus"] = num_gpus
-    data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-    data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+    data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
+    data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
     data["test_shot"] = test_shot
     data["val_num_workers"] = 16
     data["is_DDP"] = True if multi_gpu else False
@@ -149,9 +149,9 @@ def config():
     #The name of feature extractor, which should match the name of file
     #that contains the model.
     # model["backbone_name"] = "conv-4"
-    model["backbone_name"] = "timm_models.swin_tiny_patch4_window7_224"
+    model["backbone_name"] = "vit_pytorch.vit"
     #the initial learning rate
-    model["lr"] = 5e-2*data["train_batchsize"]/128
+    model["lr"] = 1e-3#5e-2*data["train_batchsize"]/128
 
 
     #less important
@@ -167,8 +167,9 @@ def config():
     model["weight_decay"] = 5e-4
     #The name of optimization scheduler
     model["decay_scheduler"] = "cosine"
-    model["optim_type"] = "adam"
+    model["optim_type"] = "adamw"
     model["num_classes"] = 712
+    model['warm_up'] = 20 # warm_up epochs if not to use warm up pls set 0
 
     
 
