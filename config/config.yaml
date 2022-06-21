@@ -1,48 +1,52 @@
 data:
   drop_last: false
-  is_DDP: true
-  is_meta: false
-  num_gpus: 2
+  is_DDP: false
+  is_FSL_val: true
+  is_meta: true
   num_query: 15
-  record_root: /dev/shm/wuhao
-  test_batchsize: 16
+  test_batchsize: 8
   test_num_task: 2000
   test_shot: 5
-  train_batchsize: 1024
-  train_dataset: ilsvrc_2012
-  train_num_workers: 20
+  train_batchsize: 2
+  train_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
+  train_dataset_name: miniImageNet
+  train_num_task_per_epoch: 1000
+  train_num_workers: 8
+  train_shot: 5
   val_batchsize: 2
   val_num_task: 1200
-  val_num_workers: 16
+  val_num_workers: 12
   val_shot: 5
-  val_test_dataset: ilsvrc_2012
+  val_test_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
+  val_test_dataset_name: miniImageNet
   way: 5
-datamodule_name: Simple_MD_datamodule
-is_test: false
-load_pretrained: false
+datamodule_name: few_shot_datamodule
+is_test: true
+load_backbone_only: true
+load_pretrained: true
 model:
-  backbone_name: vit_pytorch.vit
+  backbone_name: resnet12
   decay_scheduler: cosine
-  lr: 0.001
-  num_classes: 712
+  lr: 0.05
+  metric: enclidean
+  normalize: true
   num_query: 15
-  optim_type: adamw
-  task_classifier_name: proto_head
-  task_classifier_params:
-    learn_scale: false
-    metric: cosine
-    normalize: false
+  optim_type: sgd
+  scale_cls: 0.05
   test_batch_size_per_gpu: 8
   test_shot: 5
-  use_pickle: false
-  val_batch_size_per_gpu: 1
+  train_batch_size_per_gpu: 2
+  train_shot: 5
+  val_batch_size_per_gpu: 2
   val_shot: 5
-  warm_up: 20
   way: 5
   weight_decay: 0.0005
-model_name: CE_pretrain
+model_name: PN
+num_test: 5
+pre_trained_path: /home/wuhao/workspace/FEAT/checkpoints/MiniImageNet-ProtoNet-Res12-05w05s15q-DIS/10_0.2_lr0.0001mul10_step_T120.0T21.0_b0.0_bsz100-NoAug/protonet-5-shot-new.pth
+seed: 10
 trainer:
-  accelerator: ddp
+  accelerator: null
   callbacks:
   - class_path: pytorch_lightning.callbacks.LearningRateMonitor
     init_args:
@@ -55,20 +59,17 @@ trainer:
       verbose: true
   - class_path: callbacks.SetSeedCallback
     init_args:
-      is_DDP: true
-      seed: 20
+      is_DDP: false
+      seed: 10
   fast_dev_run: false
   gpus:
   - 0
-  - 1
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
-      name: CE_pretrain
-      save_dir: ./results
-  max_epochs: 350
-  plugins:
-  - class_path: plugins.modified_DDPPlugin
+      name: ProtoNet/
+      save_dir: ./results/
+  max_epochs: 80
   replace_sampler_ddp: false
   resume_from_checkpoint: null
-  sync_batchnorm: true
+  sync_batchnorm: false

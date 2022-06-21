@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from architectures import get_classifier, get_backbone, PN_head
 import torch
 from torchmetrics import Accuracy, AverageMeter
+import utils
 class NoAV_CL(BaseFewShotModule):
     r"""The baseline model without auto-view module in the paper 
         'Boosting Few-Shot Classification with View-learnable Contrastive Learning'.
@@ -20,6 +21,7 @@ class NoAV_CL(BaseFewShotModule):
         queue_len: int = 65500,
         mlp_dim: int = 128, 
         is_DDP: bool = True,
+        is_Exemplar: bool = False,
         backbone_name: str = "resnet12",      
         way: int = 5,
         train_shot: int = 5,
@@ -88,7 +90,18 @@ class NoAV_CL(BaseFewShotModule):
         for param, param_m in zip(self.backbone.parameters(), self.backbone_m.parameters()):
             param_m.data.copy_(param.data)  # initialize
             param_m.requires_grad = False  # not update by gradient
-
+        """
+        =====================================distill======================================
+        """
+        if self.hparams.is_Distill:
+            self.t_backbone = get_backbone(self.hparams.teacher_backbone_name, **backbone_kwargs)
+            state = utils.preserve_key(torch.load(self.hparams.teacher_path, map_location="cuda:1")["state_dict"], "backbone")
+            self.t_backbone.load_state_dict(state)
+            for para in self.t_backbone.parameters():
+                para.requires_grad = False
+        """
+        ========================================END=========================================
+        """
         self.add_nonlinear = nn.Sequential(
             nn.Linear(self.backbone.outdim, self.backbone.outdim), nn.ReLU(), nn.Linear(self.backbone.outdim, mlp_dim)
         )
@@ -102,6 +115,9 @@ class NoAV_CL(BaseFewShotModule):
         self.register_buffer("queue", torch.randn(mlp_dim, queue_len))
         self.queue = nn.functional.normalize(self.queue, dim=0)
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
+        if is_Exemplar:
+            self.register_buffer("labels", torch.zeros(queue_len, dtype=torch.long))
+            self.labels -= 1
         self.classifier = PN_head(metric, scale_cls, normalize=normalize)
 
     @torch.no_grad()
@@ -119,7 +135,8 @@ class NoAV_CL(BaseFewShotModule):
         # gather keys before updating queue
         if self.hparams.is_DDP:
             keys = concat_all_gather(keys)
-
+            if self.hparams.is_Exemplar:
+                labels = concat_all_gather(labels)
         batch_size = keys.shape[0]
 
         ptr = int(self.queue_ptr)
@@ -128,6 +145,8 @@ class NoAV_CL(BaseFewShotModule):
 
         # replace the keys at ptr (dequeue and enqueue)
         self.queue[:, ptr:ptr + batch_size] = keys.T
+        if self.hparams.is_Exemplar:
+            self.labels[ptr:ptr + batch_size] = labels # recycle queue
         ptr = (ptr + batch_size) % self.hparams.queue_len  # move pointer
         self.queue_ptr[0] = ptr
 
@@ -192,24 +211,43 @@ class NoAV_CL(BaseFewShotModule):
 
     def train_forward(self, batch, batch_size, way, shot):
         data, im_one, im_two, labels = batch
-        
 
         """
         ===================Few-Shot Learning====================
         """
 
         num_support_samples = way * shot
-        data = self.backbone(data)
-        # import pdb
-        # pdb.set_trace()
-        data = data.reshape([batch_size, -1] + list(data.shape[-3:]))
-        data_support = data[:, :num_support_samples]
-        data_query = data[:, num_support_samples:]
+        heatmap = self.backbone(data)
+        data1 = heatmap.reshape([batch_size, -1] + list(heatmap.shape[-3:]))
+        data_support = data1[:, :num_support_samples]
+        data_query = data1[:, num_support_samples:]
         logits_PN = self.classifier(data_query, data_support, way, shot)
+
+        """
+        ======================Distill Operation================
+        """
+        with torch.no_grad():
+            t_heatmap = self.t_backbone(data)
+            data2 = t_heatmap.reshape([batch_size, -1] + list(t_heatmap.shape[-3:]))
+            data_support = data2[:, :num_support_samples]
+            data_query = data2[:, num_support_samples:]
+            logits_T = self.classifier(data_query, data_support, way, shot)
+            ## ====================filter======================= ##
+            labels_query_per_task = torch.tensor(range(way)).repeat(int(data_query.shape[1]/way)).cuda()
+            label_pseudo = torch.argmax(logits_T, dim=len(logits_T.shape)-1)
+            compare = torch.stack([torch.where((label_pseudo[i, :] == labels_query_per_task) == 1,
+                                               torch.ones(label_pseudo.shape[-1], dtype=torch.int32).cuda(),
+                                               torch.zeros(label_pseudo.shape[-1], dtype=torch.int32).cuda())
+                                   for i in range(label_pseudo.shape[0])])
+            index = torch.nonzero(compare.reshape(1, -1).squeeze()).squeeze()
+            logits_T = torch.index_select(logits_T.reshape(-1, way), 0, index)
+            logits_S = torch.index_select(logits_PN.reshape(-1, way), 0, index)
+            ## ====================END======================= ##
 
         """
         ===================Contrastive Learning====================
         """
+
         if not self.hparams.is_DDP:
             batch_size = im_one.size(0)
             q_1, q_2 = torch.split(im_one, batch_size//2)
@@ -254,26 +292,47 @@ class NoAV_CL(BaseFewShotModule):
         #n:batch_size,c:dim,k:queue_length    
         l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
         l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
+        if self.hparams.is_Exemplar:
+            labels_tmp = torch.unsqueeze(labels, -1).repeat(1, self.labels.size(0))
+            label_queue = torch.unsqueeze(self.labels, 0).repeat(labels_tmp.size(0), 1)
+            heatmap = (labels_tmp == label_queue).long() * (-300)
+            l_neg += heatmap
         logits_con = torch.cat([l_pos, l_neg], dim=1)
         logits_con /= self.hparams.temparature
         con_label = torch.zeros(logits_con.shape[0], dtype=torch.long).cuda()
         self._dequeue_and_enqueue(k, labels)
-        return logits_PN, logits_con, con_label
+
+
+        return logits_PN, logits_con, con_label, logits_T, logits_S
+
+
     
     def training_step(self, batch, batch_idx):
-        logits_PN, logits_con, con_label = self.train_forward(batch, self.hparams.train_batch_size_per_gpu, self.hparams.way, self.hparams.train_shot)
+        logits_PN, logits_con, con_label, logits_T, logits_S = self.train_forward(batch, self.hparams.train_batch_size_per_gpu, self.hparams.way, self.hparams.train_shot)
         label = torch.unsqueeze(self.label, 0).repeat(self.hparams.train_batch_size_per_gpu, 1).reshape(-1).to(logits_PN.device)
         logits_PN = logits_PN.reshape(label.size(0),-1)
         loss_PN = F.cross_entropy(logits_PN, label)
+
+        ## =================distill=================== ##
+        p_s = F.log_softmax(logits_S / self.hparams.dis_temparature, dim=1)
+        # logits_T = logits_T.reshape(label.size(0), -1)
+        p_t = F.softmax(logits_T / self.hparams.dis_temparature, dim=1)
+        loss_dis = F.kl_div(p_s, p_t, reduction='sum') * (self.hparams.dis_temparature ** 2) / logits_S.shape[0]
+        ## ===================END===================== ##
         loss_con = F.cross_entropy(logits_con, con_label)
-        loss = loss_PN + self.hparams.beta * loss_con
+        loss = 0.5 * loss_PN + self.hparams.beta * loss_con + 0.5 * loss_dis
+
+
+
         log_loss_con = self.con_loss(loss_con)
         log_loss_PN = self.PN_loss(loss_PN)
+        log_loss_dis = self.dis_loss(loss_dis)
         log_loss_total = self.total_loss(loss)
         accuracy_PN = self.PN_acc(logits_PN, label)
         accuracy_con = self.con_acc(logits_con, con_label)
         self.log("train/loss_PN", log_loss_PN)
         self.log("train/loss_con", log_loss_con)
+        self.log("train/loss_dis", log_loss_dis)
         self.log("train/loss_total", log_loss_total)
         self.log("train/acc_PN", accuracy_PN)
         self.log("train/acc_con", accuracy_con)
@@ -293,6 +352,7 @@ class NoAV_CL(BaseFewShotModule):
         """Set logging metrics."""
         self.con_loss = AverageMeter()
         self.PN_loss = AverageMeter()
+        self.dis_loss = AverageMeter()
         self.total_loss = AverageMeter()
         self.PN_acc = Accuracy()
         self.con_acc = Accuracy()

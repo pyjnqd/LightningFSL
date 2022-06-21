@@ -23,7 +23,7 @@ def epoch_wrapup(pl_module: LightningModule, mode: str):
         pl_module.log(f"{mode}/acc_epoch", value)
     getattr(pl_module, f"{mode}_acc").reset()
 
-def set_schedule(pl_module):
+def set_schedule(pl_module: object) -> object:
     r"""Set the optimizer and scheduler for training.
 
     Supported optimizer:
@@ -65,7 +65,7 @@ def set_schedule(pl_module):
         else:
             max_steps = pl_module.trainer.max_steps
         # warm_up
-        if warm_up != 0:
+        if warm_up != 0 and warm_up is not None:
             warm_up_steps = length_epoch * warm_up
             warm_up_with_cosine_lr = lambda step: step / warm_up_steps if step <= warm_up_steps else 0.5 * (
                         math.cos((step - warm_up_steps) / (max_steps - warm_up_steps) * math.pi) + 1)
@@ -79,7 +79,7 @@ def set_schedule(pl_module):
         decay_power = pl_module.hparams.decay_power
         assert decay_epochs is not None and decay_power is not None
         # warm_up
-        if warm_up != 0:
+        if warm_up != 0 and warm_up is not None:
             warm_up_with_multistep_lr = lambda \
                 epoch: epoch / warm_up if epoch <= warm_up else 0.1 ** len([m for m in decay_epochs if m <= epoch])
             scheduler = {'scheduler': LambdaLR(optimizer, lr_lambda=warm_up_with_multistep_lr), 'interval': 'epoch'}

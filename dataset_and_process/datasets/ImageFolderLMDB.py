@@ -31,14 +31,17 @@ class ImageFolderLMDB(data.Dataset):
                              readahead=False,
                              meminit=False)
         self.targets = []
+        # self.samples = []
         with self.env.begin(write = False) as txn:
             self.length = loads_data(txn.get(b'__len__'))
             self.keys = loads_data(txn.get(b'__keys__'))
             for idx in range(self.length):
                 unpacked = loads_data(txn.get(self.keys[idx]))
                 self.targets.append(unpacked[1])
+                # self.samples.append(unpacked[0])
         self.transform = transform
         self.target_transform = target_transform
+        # self.imgs = self.samples
 
     def __getitem__(self, index):
         env = self.env

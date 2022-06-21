@@ -154,12 +154,12 @@ class FewShotDataModule(LightningDataModule):
                 )
         elif self.is_DDP:
             self.val_sampler = DistributedSampler(self.val_dataset)
-            #self.test_sampler = DistributedSampler(self.test_dataset)
+            self.test_sampler = DistributedSampler(self.test_dataset)
         
     def setup(self, stage):
         self.set_train_dataset()
         self.set_val_dataset()
-        #self.set_test_dataset() # imagenet 没有带标签test
+        self.set_test_dataset() # imagenet 没有带标签test
         self.set_sampler()
 
     def train_dataloader(self):
@@ -200,17 +200,7 @@ class FewShotDataModule(LightningDataModule):
             sampler = self.test_sampler,
             pin_memory = True
         )
-        # loader = DataLoader(
-        #     self.test_dataset,
-        #     batch_size=128,
-        #     shuffle = False,
-        #     num_workers = self.val_num_workers,
-        #     # batch_sampler = self.test_batch_sampler,
-        #     pin_memory = True
-        # )
         return loader
 
-if __name__ == '__main__':
-    a = FewShotDataModule()
-    # a.set_train_dataset()
-    # print(a.train_dataloader().sampler)
+def get_datamodule():
+    return FewShotDataModule

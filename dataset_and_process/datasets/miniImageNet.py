@@ -4,7 +4,7 @@ import numpy as np
 from torchvision.datasets import ImageFolder
 from .ImageFolderLMDB import ImageFolderLMDB
 
-class miniImageNet(ImageFolderLMDB):
+class miniImageNet(ImageFolder):
     r"""The standard  dataset for miniImageNet. ::
          
         root
@@ -36,8 +36,8 @@ class miniImageNet(ImageFolderLMDB):
                 transforms.CenterCrop(image_sz),
 
                 transforms.ToTensor(),
-                transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
-                                        np.array([0.2726, 0.2634, 0.2794]))])
+                transforms.Normalize(np.array([0.47214064, 0.45330829, 0.40996128]),#[0.47214064, 0.45330829, 0.40996128]
+                                        np.array([0.27718385, 0.26775041, 0.28449041]))])#[0.27718385, 0.26775041, 0.28449041]
         elif mode == 'train':
             transform = transforms.Compose([
                 transforms.RandomResizedCrop(image_sz),
@@ -45,7 +45,7 @@ class miniImageNet(ImageFolderLMDB):
                 transforms.ToTensor(),
                 transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
                                         np.array([0.2726, 0.2634, 0.2794]))])
-        super().__init__(LMDB_PATH, transform) # lmdb or image
+        super().__init__(IMAGE_PATH, transform) # lmdb or image
         self.label = self.targets
 
 

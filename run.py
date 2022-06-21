@@ -101,9 +101,10 @@ class Few_Shot_CLI(LightningCLI):
 
     def before_fit(self):
         """Load pretrained model."""
-        string = "cuda:1"
+        string = "cuda:3"
         if self.config["load_pretrained"]:
             state = torch.load(self.config["pre_trained_path"], map_location=string)["state_dict"]
+
             if self.config["load_backbone_only"]:
                 state = utils.preserve_key(state, "backbone")
                 self.model.backbone.load_state_dict(state)

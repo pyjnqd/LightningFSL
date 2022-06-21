@@ -17,7 +17,7 @@ class MoCo(BaseFewShotModule):
         mlp_dim: int = 128, 
         task_classifier_name: str = "proto_head",
         task_classifier_params: Dict = {"learn_scale":False},
-        is_Exampler: bool = True,
+        is_Exemplar: bool = True,
         is_DDP: bool = True,
         backbone_name: str = "resnet12",      
         way: int = 5,
@@ -46,7 +46,7 @@ class MoCo(BaseFewShotModule):
                                   contains the classifier class.
             task_classifier_params: The initial parameters of the classifier for 
                                     downstream (val, test) few-shot tasks.
-            is_Exampler: Whether to use Exampler variant of MoCo.
+            is_Exemplar: Whether to use Exampler variant of MoCo.
             is_DDP: Whether in DDP mode for multi-GPU training.
             backbone_name: The name of the feature extractor, 
                         which should match the correspond 
@@ -99,7 +99,7 @@ class MoCo(BaseFewShotModule):
         self.queue = nn.functional.normalize(self.queue, dim=0)
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
 
-        if is_Exampler:
+        if is_Exemplar:
             self.register_buffer("labels", torch.zeros(queue_len, dtype=torch.long))
             self.labels -= 1
 
@@ -120,7 +120,7 @@ class MoCo(BaseFewShotModule):
         # gather keys before updating queue
         if self.hparams.is_DDP:
             keys = concat_all_gather(keys)
-            if self.hparams.is_Exampler:
+            if self.hparams.is_Exemplar:
                 labels = concat_all_gather(labels)
 
         batch_size = keys.shape[0]
@@ -131,7 +131,7 @@ class MoCo(BaseFewShotModule):
 
         # replace the keys at ptr (dequeue and enqueue)
         self.queue[:, ptr:ptr + batch_size] = keys.T
-        if self.hparams.is_Exampler:
+        if self.hparams.is_Exemplar:
             self.labels[ptr:ptr + batch_size] = labels
         ptr = (ptr + batch_size) % self.hparams.queue_len  # move pointer
         self.queue_ptr[0] = ptr
@@ -227,7 +227,7 @@ class MoCo(BaseFewShotModule):
                 k = nn.functional.normalize(k, dim=1)
                 k = nn.functional.adaptive_avg_pool2d(k,1).view(k.size(0), -1)        
                 k = self.add_nonlinear_m(k)
-                k = nn.functional.normalize(k, dim=1)
+                # k = nn.functional.normalize(k, dim=1)
                 k = self._batch_unshuffle(k, idx_unshuffle)
             else:
                 im_two, idx_unshuffle = self._batch_shuffle_ddp(im_two)
@@ -241,8 +241,7 @@ class MoCo(BaseFewShotModule):
         #n:batch_size,c:dim,k:queue_length    
         l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
         l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
-        if self.hparams.is_Exampler:
-            # print(lables.shape)
+        if self.hparams.is_Exemplar:
             labels_tmp = torch.unsqueeze(labels, -1).repeat(1,self.labels.size(0))
             label_queue =torch.unsqueeze(self.labels, 0).repeat(labels_tmp.size(0), 1)
             heatmap = (labels_tmp==label_queue).long()*(-300)

@@ -29,6 +29,7 @@ class ProtoNet(BaseFewShotModule):
         decay_epochs: Union[List, Tuple, None] = None,
         decay_power: Optional[float] = None,
         backbone_kwargs: Dict = {},
+        warm_up: int = 0,
         **kwargs
     ) -> None:
         """   
@@ -70,7 +71,7 @@ class ProtoNet(BaseFewShotModule):
             test_shot, num_query, train_batch_size_per_gpu,
             val_batch_size_per_gpu, test_batch_size_per_gpu,
             lr, weight_decay, decay_scheduler, optim_type,
-            decay_epochs, decay_power, backbone_kwargs
+            decay_epochs, decay_power, warm_up, backbone_kwargs,
         )
         self.classifier = PN_head(metric, scale_cls, normalize=normalize)
 

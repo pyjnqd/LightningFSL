@@ -9,7 +9,7 @@ def config():
     # if training, set to False
     config_dict["load_pretrained"] = False
     # if training, set to False
-    config_dict["is_test"] = False
+    config_dict["is_test"] = True
 
     if config_dict["is_test"]:
         # if testing, specify the total rounds of testing. Default: 5
@@ -17,9 +17,9 @@ def config():
         config_dict["load_pretrained"] = True
         # specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = ""
+        config_dict["pre_trained_path"] = "/home/wuhao/workspace/FEAT/checkpoints/MiniImageNet-ProtoNet-Res12-05w05s15q-DIS/10_0.2_lr0.0001mul10_step_T120.0T21.0_b0.0_bsz100-NoAug/protonet-5-shot-new.pth"
         # only load the backbone.
-        config_dict["load_backbone_only"] = False
+        config_dict["load_backbone_only"] = True
         
     #Specify the model name, which should match the name of file
     #that contains the LightningModule
@@ -29,7 +29,7 @@ def config():
     
 
     #whether to use multiple GPUs
-    multi_gpu = False
+    multi_gpu = True
     if config_dict["is_test"]:
         multi_gpu = False
     #The seed
@@ -57,18 +57,18 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [1]
+        trainer["gpus"] = [0]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
-    trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
+    trainer["resume_from_checkpoint"] = None
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 6000
+    trainer["max_epochs"] = 80
 
     # potential functionalities added to the trainer.
     trainer["callbacks"] = [{"class_path": "pytorch_lightning.callbacks.LearningRateMonitor", 
@@ -113,15 +113,15 @@ def config():
     #that contains the datamodule.
     data["train_dataset_name"] = "miniImageNet"
 
-    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_lmdb"
+    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
     # /dev/shm/wuhao/mini_imagenet/images_imagefolder
     # /home/wuhao/data/mini_imagenet/images_imagefolder
     data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_lmdb"
+    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
     #determine whether meta-learning.
     data["is_meta"] = True
-    data["train_num_workers"] = 28
+    data["train_num_workers"] = 8
     #the number of tasks
     data["train_num_task_per_epoch"] = 1000
     data["val_num_task"] = 1200
@@ -139,7 +139,7 @@ def config():
         data["test_batchsize"] = 1024
     data["test_shot"] = test_shot
     data["train_shot"] = train_shot
-    data["val_num_workers"] = 36
+    data["val_num_workers"] = 12
     data["is_DDP"] = True if multi_gpu else False
     data["way"] = way
     data["val_shot"] = val_shot
@@ -172,8 +172,8 @@ def config():
     model["decay_scheduler"] = "cosine"
     model["optim_type"] = "sgd"
     #cosine or euclidean
-    model["metric"] = "cosine"
-    model["scale_cls"] = 10.
+    model["metric"] = "enclidean" # enclidean
+    model["scale_cls"] = 0.05
     model["normalize"] = True
     
 

@@ -8,7 +8,7 @@ from sacred import Experiment
 import yaml
 import time 
 import os
-ex = Experiment("MoCo", save_git_info=False)
+ex = Experiment("Exemplar", save_git_info=False)
 
 @ex.config
 def config():
@@ -17,14 +17,14 @@ def config():
     #if training, set to False
     config_dict["load_pretrained"] = False
     #if training, set to False
-    config_dict["is_test"] = False
+    config_dict["is_test"] = True
     if config_dict["is_test"]:
         #if testing, specify the total rounds of testing. Default: 5
         config_dict["num_test"] = 5
         config_dict["load_pretrained"] = True
         #specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "../results/CC/version_11/checkpoints/epoch=52-step=26499.ckpt"
+        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/results/CL/Exemplar/version_1/checkpoints/epoch=1108-step=166349.ckpt"
         #only load the backbone.
         config_dict["load_backbone_only"] = False
 
@@ -40,12 +40,13 @@ def config():
     if config_dict["is_test"]:
         multi_gpu = False
     #The seed
+
     seed = 10
     config_dict["seed"] = seed
 
     #The logging dirname: logdir/exp_name/
-    log_dir = "../results/"
-    exp_name = "Exemplar/1000epoch/no_sync_BN"
+    log_dir = "./results/"
+    exp_name = "CL/Exemplar/"
     
     #Three components of a Lightning Running System
     trainer = {}
@@ -64,18 +65,18 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = False
-        trainer["gpus"] = [3,4]
+        trainer["gpus"] = [2,3]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [2]
+        trainer["gpus"] = [1]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
     trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 1000
+    trainer["max_epochs"] = 1200
 
     
     # potential functionalities added to the trainer.
@@ -119,11 +120,11 @@ def config():
     
     data["train_dataset_name"] = "miniImageNet_contra"
 
-    data["train_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["train_data_root"] = "/dev/shm/wuhao/images_imagefolder"
 
     data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["val_test_data_root"] = "/dev/shm/wuhao/images_imagefolder"
 
 
 
@@ -136,10 +137,10 @@ def config():
     
     #less important
     data["num_gpus"] = num_gpus
-    data["is_FSL_val"]=True # update for new datamodule
+    data["is_FSL_val"] = True # update for new datamodule
     if data["is_FSL_val"]:
-        data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-        data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+        data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
+        data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
     else:
         data["val_batchsize"] = 1024
         data["test_batchsize"] = 1024
@@ -159,9 +160,9 @@ def config():
     #The name of feature extractor, which should match the name of file
     #that contains the model.
     model["backbone_name"] = "resnet12"
-    model["is_Exampler"] = True
+    model["is_Exemplar"] = True
     #the initial learning rate
-    model["lr"] = 0.1*data["train_batchsize"]/256
+    model["lr"] = 0.1 * data["train_batchsize"]/256
 
 
     #less important

@@ -71,9 +71,9 @@ class PN_head(nn.Module):
             features_test = F.normalize(features_test, p=2, dim=2, eps=1e-12)
             #[batch_size, num_query, c] * [batch_size, c, way] -> [batch_size, num_query, way]
             classification_scores = self.scale_cls * torch.bmm(features_test, prototypes.transpose(1, 2))
-
-        elif self.metric == "euclidean":
+        elif self.metric == "enclidean":
             classification_scores = -self.scale_cls * L2SquareDist(features_test, prototypes)
+
         return classification_scores
 
 def create_model(metric: str = "cosine", 

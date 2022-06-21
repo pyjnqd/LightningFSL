@@ -1,13 +1,13 @@
 """
 Training MoCo---Momentum Contrast for Unsupervised Visual Representation Learning, CVPR 2020,
-or Exampler---What makes instance discrimination good for transfer learning? ICLR 2021.
+or
+Exampler---What makes instance discrimination good for transfer learning? ICLR 2021.
 """
 
 
 from sacred import Experiment
 import yaml
-import time 
-import os
+
 ex = Experiment("CL", save_git_info=False)
 
 @ex.config
@@ -24,7 +24,7 @@ def config():
         config_dict["load_pretrained"] = True
         #specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "../results/CL/test/version_21/checkpoints/epoch=53-step=26999.ckpt"
+        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/results/CL/PN+CL+DIS/version_25/checkpoints/epoch=90-step=15196.ckpt"
         #only load the backbone.
         config_dict["load_backbone_only"] = False
 
@@ -44,8 +44,8 @@ def config():
     config_dict["seed"] = seed
 
     #The logging dirname: logdir/exp_name/
-    log_dir = "../results/"
-    exp_name = "CL/test"
+    log_dir = "./results/"
+    exp_name = "CL/PN+CL+DIS"
     
     #Three components of a Lightning Running System
     trainer = {}
@@ -64,7 +64,7 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = False
-        trainer["gpus"] = [0,1]
+        trainer["gpus"] = [1,2,3]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
@@ -72,10 +72,10 @@ def config():
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
-    trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
+    trainer["resume_from_checkpoint"] = None #"/home/wuhao/workspace/LightningFSL/results/CL/moco/version_2/checkpoints/epoch=62-step=38999.ckpt"
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 60
+    trainer["max_epochs"] = 100
 
     
     # potential functionalities added to the trainer.
@@ -101,12 +101,12 @@ def config():
     ##################shared model and datamodule configuration###########################
 
     #important
-    per_gpu_train_batchsize = 1
+    per_gpu_train_batchsize = 2
     train_shot = 5
-    test_shot = 1
+    test_shot = 5
 
     #less important
-    per_gpu_val_batchsize = 1
+    per_gpu_val_batchsize = 2
     per_gpu_test_batchsize = 8
     way = 5
     val_shot = 5
@@ -121,11 +121,11 @@ def config():
     
     data["train_dataset_name"] = "miniImageNet_mixedwithcontra"
 
-    data["train_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["train_data_root"] = "/dev/shm/wuhao/images_imagefolder"
 
     data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "../BF3S-master/data/mini_imagenet_split/images"
+    data["val_test_data_root"] = "/dev/shm/wuhao/images_imagefolder"
 
 
 
@@ -138,10 +138,10 @@ def config():
     #less important
     data["num_gpus"] = num_gpus
     data["train_batchsize"] = num_gpus*per_gpu_train_batchsize
-    data["is_FSL_val"]=True # update for new datamodule
+    data["is_FSL_val"] = True # update for new datamodule
     if data["is_FSL_val"]:
-        data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
-        data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
+        data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
+        data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
     else:
         data["val_batchsize"] = 1024
         data["test_batchsize"] = 1024
@@ -165,16 +165,22 @@ def config():
     model["beta"] = 2.0
 
     #the initial learning rate
-    model["lr"] = 0.1*data["train_batchsize"]/4
+    model["lr"] = 0.1 * data["train_batchsize"]/4
 
 
     #less important
     model["momemtum"] = 0.999
-    model["temparature"] = 0.07
-    model["queue_len"] = 65600
+    model["temparature"] = 0.07 # Moco temparature
+    model["dis_temparature"] = 4.0 # dostill temparature
+    model["queue_len"] = 65400
     model["mlp_dim"] = 128
     
     model["is_DDP"] = multi_gpu
+    model['is_Exemplar'] = True
+    model['is_Distill'] = True
+    if model['is_Distill']:
+        model['teacher_path'] = "/home/wuhao/workspace/LightningFSL/results/CL/Exemplar/version_1/checkpoints/epoch=1108-step=166349.ckpt"
+        model['teacher_backbone_name'] = 'resnet12'
     model["way"] = way
     model["train_shot"] = train_shot
     model["val_shot"] = val_shot
