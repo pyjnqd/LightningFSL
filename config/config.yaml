@@ -1,19 +1,19 @@
 data:
   drop_last: false
-  is_DDP: false
+  is_DDP: true
   is_FSL_val: true
   is_meta: true
   num_query: 15
-  test_batchsize: 8
+  test_batchsize: 16
   test_num_task: 2000
   test_shot: 5
-  train_batchsize: 2
+  train_batchsize: 4
   train_data_root: /home/wuhao/data/mini_imagenet/images_imagefolder
   train_dataset_name: miniImageNet
   train_num_task_per_epoch: 1000
   train_num_workers: 8
   train_shot: 5
-  val_batchsize: 2
+  val_batchsize: 4
   val_num_task: 1200
   val_num_workers: 12
   val_shot: 5
@@ -21,15 +21,13 @@ data:
   val_test_dataset_name: miniImageNet
   way: 5
 datamodule_name: few_shot_datamodule
-is_test: true
-load_backbone_only: true
-load_pretrained: true
+is_test: false
+load_pretrained: false
 model:
   backbone_name: resnet12
   decay_scheduler: cosine
-  lr: 0.05
+  lr: 0.1
   metric: enclidean
-  normalize: true
   num_query: 15
   optim_type: sgd
   scale_cls: 0.05
@@ -42,11 +40,9 @@ model:
   way: 5
   weight_decay: 0.0005
 model_name: PN
-num_test: 5
-pre_trained_path: /home/wuhao/workspace/FEAT/checkpoints/MiniImageNet-ProtoNet-Res12-05w05s15q-DIS/10_0.2_lr0.0001mul10_step_T120.0T21.0_b0.0_bsz100-NoAug/protonet-5-shot-new.pth
 seed: 10
 trainer:
-  accelerator: null
+  accelerator: ddp
   callbacks:
   - class_path: pytorch_lightning.callbacks.LearningRateMonitor
     init_args:
@@ -59,17 +55,20 @@ trainer:
       verbose: true
   - class_path: callbacks.SetSeedCallback
     init_args:
-      is_DDP: false
+      is_DDP: true
       seed: 10
   fast_dev_run: false
   gpus:
-  - 0
+  - 2
+  - 3
   logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
       name: ProtoNet/
       save_dir: ./results/
   max_epochs: 80
+  plugins:
+  - class_path: plugins.modified_DDPPlugin
   replace_sampler_ddp: false
   resume_from_checkpoint: null
-  sync_batchnorm: false
+  sync_batchnorm: true

@@ -12,7 +12,6 @@ class ProtoNet(BaseFewShotModule):
         self,
         metric: str = "cosine",
         scale_cls: float = 10.,
-        normalize: bool = True,
         backbone_name: str = "resnet12",      
         way: int = 5,
         train_shot: int = 5,
@@ -73,7 +72,7 @@ class ProtoNet(BaseFewShotModule):
             lr, weight_decay, decay_scheduler, optim_type,
             decay_epochs, decay_power, warm_up, backbone_kwargs,
         )
-        self.classifier = PN_head(metric, scale_cls, normalize=normalize)
+        self.classifier = PN_head(metric, scale_cls)
 
 
     def forward(self, batch, batch_size, way, shot):

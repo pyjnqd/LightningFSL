@@ -14,9 +14,9 @@ def config():
     config_dict = {}
 
     # if training, set to False
-    config_dict["load_pretrained"] = True
+    config_dict["load_pretrained"] = False
     # if training, set to False
-    config_dict["is_test"] = True
+    config_dict["is_test"] = False
 
     if config_dict["is_test"]:
         # if testing, specify the total rounds of testing. Default: 5
@@ -24,7 +24,7 @@ def config():
         config_dict["load_pretrained"] = True
         # specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/results/CL/Jigsaw/version_52/checkpoints/epoch=72-step=72999.ckpt"
+        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/results/ProtoNet/Res12-pre-new.pth"
         # only load the backbone.
         config_dict["load_backbone_only"] = True
 
@@ -61,7 +61,7 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
@@ -72,7 +72,7 @@ def config():
     trainer["resume_from_checkpoint"] = None
 
     # The maximum epochs to run
-    trainer["max_epochs"] = 100
+    trainer["max_epochs"] = 60
 
     # potential functionalities added to the trainer.
     trainer["callbacks"] = [{"class_path": "pytorch_lightning.callbacks.LearningRateMonitor",
@@ -116,7 +116,7 @@ def config():
 
     data["train_dataset_name"] = "miniImageNet_Jigsaw"
 
-    data["train_data_root"] = "/dev/shm/wuhao/images_imagefolder"
+    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
     # "/home/wuhao/data/mini_imagenet/images_imagefolder"
     # /dev/shm/wuhao/images_imagefolder
     data["val_test_dataset_name"] = "miniImageNet"
@@ -124,9 +124,9 @@ def config():
     data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
 
     # data["train_batchsize"] = 256
-    data["train_num_workers"] = 12
+    data["train_num_workers"] = 8
     # the number of tasks
-    data["val_num_task"] = 1200
+    data["val_num_task"] = 10000
     data["test_num_task"] = 2000
 
     # less important
@@ -157,7 +157,7 @@ def config():
     # that contains the model.
     model["backbone_name"] = "resnet12"
     # the initial learning rate
-    model["lr"] = 0.02 # * data["train_batchsize"] / 256
+    model["lr"] = 0.0001 # * data["train_batchsize"] / 256
 
     # less important
     model["momemtum"] = 0.9

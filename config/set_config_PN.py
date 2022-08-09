@@ -9,7 +9,7 @@ def config():
     # if training, set to False
     config_dict["load_pretrained"] = False
     # if training, set to False
-    config_dict["is_test"] = True
+    config_dict["is_test"] = False
 
     if config_dict["is_test"]:
         # if testing, specify the total rounds of testing. Default: 5
@@ -17,7 +17,7 @@ def config():
         config_dict["load_pretrained"] = True
         # specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "/home/wuhao/workspace/FEAT/checkpoints/MiniImageNet-ProtoNet-Res12-05w05s15q-DIS/10_0.2_lr0.0001mul10_step_T120.0T21.0_b0.0_bsz100-NoAug/protonet-5-shot-new.pth"
+        config_dict["pre_trained_path"] = None #"/home/wuhao/workspace/LightningFSL/results/ProtoNet/Res12-pre-new.pth"
         # only load the backbone.
         config_dict["load_backbone_only"] = True
         
@@ -57,11 +57,11 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [0,1]
+        trainer["gpus"] = [2,3]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [0]
+        trainer["gpus"] = [3]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
@@ -113,15 +113,15 @@ def config():
     #that contains the datamodule.
     data["train_dataset_name"] = "miniImageNet"
 
-    data["train_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
+    data["train_data_root"] = "/dev/shm/wuhao/mini_imagenet/images_imagefolder"
     # /dev/shm/wuhao/mini_imagenet/images_imagefolder
     # /home/wuhao/data/mini_imagenet/images_imagefolder
     data["val_test_dataset_name"] = "miniImageNet"
 
-    data["val_test_data_root"] = "/home/wuhao/data/mini_imagenet/images_imagefolder"
+    data["val_test_data_root"] = "/dev/shm/wuhao/mini_imagenet/images_imagefolder"
     #determine whether meta-learning.
     data["is_meta"] = True
-    data["train_num_workers"] = 8
+    data["train_num_workers"] = 12
     #the number of tasks
     data["train_num_task_per_epoch"] = 1000
     data["val_num_task"] = 1200
@@ -130,7 +130,7 @@ def config():
     
     #less important
     data["train_batchsize"] = num_gpus * per_gpu_train_batchsize
-    data["is_FSL_val"]=True # update for new datamodule
+    data["is_FSL_val"] = True # update for new datamodule
     if data["is_FSL_val"]:
         data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
         data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
@@ -155,7 +155,7 @@ def config():
     # if you wnnan use transformer-based backbone, pls quote in the form of vit_pytorch.xxx
     model["backbone_name"] = "resnet12"
     #the initial learning rate
-    model["lr"] = 0.1*data["train_batchsize"]/4
+    model["lr"] = 0.1 * data["train_batchsize"]/4
 
 
     #less important
@@ -174,7 +174,7 @@ def config():
     #cosine or euclidean
     model["metric"] = "enclidean" # enclidean
     model["scale_cls"] = 0.05
-    model["normalize"] = True
+
     
 
     config_dict["trainer"] = trainer

@@ -19,8 +19,7 @@ class PN_head(nn.Module):
         self, 
         metric: str = "cosine", 
         scale_cls: int =10.0, 
-        learn_scale: bool = True, 
-        normalize: bool = True) -> None:
+        learn_scale: bool = True) -> None:
         super().__init__()
         assert metric in ["cosine", "enclidean"]
         if learn_scale:
@@ -30,7 +29,7 @@ class PN_head(nn.Module):
         else:
             self.scale_cls = scale_cls
         self.metric = metric
-        self.normalize = normalize
+
 
     def forward(self, features_test: Tensor, features_train: Tensor, 
                 way: int, shot: int) -> Tensor:
@@ -49,8 +48,6 @@ class PN_head(nn.Module):
                                    size: [batch_size, num_query, way]
         """
         if features_train.dim() == 5:
-            if self.normalize:
-                features_train=F.normalize(features_train, p=2, dim=2, eps=1e-12)
             features_train = F.adaptive_avg_pool2d(features_train, 1).squeeze_(-1).squeeze_(-1)
         assert features_train.dim() == 3
 
@@ -61,8 +58,7 @@ class PN_head(nn.Module):
         prototypes = torch.mean(features_train.reshape(batch_size, shot, way, -1),dim=1)
         prototypes = F.normalize(prototypes, p=2, dim=2, eps=1e-12)
 
-        if self.normalize:
-            features_test=F.normalize(features_test, p=2, dim=2, eps=1e-12)
+
         if features_test.dim() == 5:
             features_test = F.adaptive_avg_pool2d(features_test, 1).squeeze_(-1).squeeze_(-1)
         assert features_test.dim() == 3
@@ -78,6 +74,5 @@ class PN_head(nn.Module):
 
 def create_model(metric: str = "cosine", 
         scale_cls: int =10.0, 
-        learn_scale: bool = True, 
-        normalize: bool = True):
-    return PN_head(metric, scale_cls, learn_scale, normalize)
+        learn_scale: bool = True):
+    return PN_head(metric, scale_cls, learn_scale)

@@ -5,7 +5,7 @@ import collections
 
 state2 = torch.load("/home/wuhao/workspace/LightningFSL/results/CL/Jigsaw/version_47/checkpoints/epoch=99-step=24999.ckpt")
 keys = list(state2['state_dict'].keys())
-state = torch.load("/home/wuhao/workspace/FEAT/checkpoints/MiniImageNet-ProtoNet-Res12-05w01s15q-DIS/10_0.2_lr0.0001mul10_step_T120.0T21.0_b0.0_bsz080-NoAug/protonet-1-shot.pth")
+state = torch.load("/home/wuhao/workspace/LightningFSL/results/ProtoNet/Res12-pre.pth")
 #
 # for key in keys:
 #     state['state_dict'][key] = state2['state_dict'][key]

@@ -66,7 +66,7 @@ class miniImageNetMixedwithJigsaw(miniImageNet):
             transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
                                 np.array([0.2726, 0.2634, 0.2794]))
         ])
-        self.transform_jigsaw = JigCluTransform(self.transform, 0.3) # 超参数0.3
+        self.transform_jigsaw = JigCluTransform(self.transform_jigsaw, 0.3) # 超参数0.3
         
 
     def __getitem__(self, index):
@@ -74,7 +74,7 @@ class miniImageNetMixedwithJigsaw(miniImageNet):
         sample = self.loader(path)
         sample_normal = self.transform(sample)
         sample_jigsaw = self.transform_jigsaw(sample)
-        return sample_normal, target, sample_jigsaw
+        return sample_normal, target,
 
 
 

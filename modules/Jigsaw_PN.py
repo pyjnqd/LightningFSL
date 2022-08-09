@@ -1,3 +1,9 @@
+"""
+jigsaw PN
+3种版本：1 Patch-wise PN / 2 Scale-size jigclu / 3 Plain composition
+"""
+
+
 from .base_module import BaseFewShotModule
 import torch.nn as nn
 from typing import Tuple, List, Optional, Union, Dict
@@ -81,14 +87,11 @@ class Jigsaw_PN(BaseFewShotModule):
 
     def __init__(
             self,
-            momentum: float = 0.999,
-            temparature: float = 0.07,
             mlp_dim: int = 128,
             task_classifier_name: str = "proto_head",
             task_classifier_params: Dict = {"learn_scale": False},
             metric: str = "cosine",
             scale_cls: float = 10.,
-            normalize: bool = True,
             backbone_name: str = "resnet12",
             way: int = 5,
             train_shot: int = 5,
@@ -155,7 +158,7 @@ class Jigsaw_PN(BaseFewShotModule):
         self.criterion_clu = SupCluLoss(temperature=self.hparams.temparature)
         self.criterion_loc = nn.CrossEntropyLoss()
 
-        self.classifier = PN_head(metric, scale_cls, normalize=normalize)
+        self.classifier = PN_head(metric, scale_cls)
 
         self.fc_clu = nn.Sequential(
             nn.Linear(self.backbone.outdim, self.backbone.outdim), nn.ReLU(), nn.Linear(self.backbone.outdim, mlp_dim)
@@ -276,7 +279,7 @@ class Jigsaw_PN(BaseFewShotModule):
         num_support_samples = way * shot
         data, _ = batch
         data = self.backbone(data)
-        data = self.ada_max_pool2d(data)
+        data = self.ada_max_pool2d(data) # 未知原因
         data = data.reshape([batch_size, -1] + list(data.shape[-3:]))
         data_support = data[:, :num_support_samples]
         data_query = data[:, num_support_samples:]

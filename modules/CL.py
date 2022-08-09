@@ -257,7 +257,7 @@ class NoAV_CL(BaseFewShotModule):
         # compute query features
         else:
             q = self.backbone(im_one)  # queries: NxC
-        q = nn.functional.normalize(q, dim=1)
+        # q = nn.functional.normalize(q, dim=1)
         # print(q.shape)
         q = nn.functional.adaptive_avg_pool2d(q,1).view(q.size(0), -1)   
         # print(q.shape)     
@@ -275,7 +275,7 @@ class NoAV_CL(BaseFewShotModule):
                 k_1 = self.backbone_m(im_two_1)
                 k_2 = self.backbone_m(im_two_2)
                 k = torch.cat((k_1,k_2), dim = 0)
-                k = nn.functional.normalize(k, dim=1)
+                # k = nn.functional.normalize(k, dim=1)
                 k = nn.functional.adaptive_avg_pool2d(k,1).view(k.size(0), -1)        
                 k = self.add_nonlinear_m(k)
                 k = nn.functional.normalize(k, dim=1)
@@ -283,7 +283,7 @@ class NoAV_CL(BaseFewShotModule):
             else:
                 im_two, idx_unshuffle = self._batch_shuffle_ddp(im_two)
                 k = self.backbone_m(im_two)  # keys: NxC
-                k = nn.functional.normalize(k, dim=1)
+                # k = nn.functional.normalize(k, dim=1)
                 k = nn.functional.adaptive_avg_pool2d(k,1).view(k.size(0), -1)        
                 k = self.add_nonlinear_m(k)
                 k = nn.functional.normalize(k, dim=1)

@@ -219,10 +219,10 @@ def resnet152(pretrained=False, **kwargs):
     return model
 
 def create_model():
-    return resnet50(pretrained=False)
+    return resnet18(pretrained=True)
 
 
-model = create_model()
-import torch
-res = model(torch.ones([100,3,224,224]))
-print(res.shape)
+# model = create_model()
+# import torch
+# res = model(torch.ones([100,3,224,224]))
+# print(res.shape)

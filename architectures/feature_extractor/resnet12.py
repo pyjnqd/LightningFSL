@@ -65,7 +65,7 @@ class ResNet12(nn.Module):
         self.layer2 = self._make_layer(channels[1])
         self.layer3 = self._make_layer(channels[2])
         self.layer4 = self._make_layer(channels[3])
-        #self.avgpool = nn.AvgPool2d(5, stride=1)
+
         self.outdim = channels[3]
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -89,7 +89,7 @@ class ResNet12(nn.Module):
         x = self.layer2(x)
         x = self.layer3(x)
         x = self.layer4(x)
-        #x = self.avgpool(x)
+
         return x
 
 
