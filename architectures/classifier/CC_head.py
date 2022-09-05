@@ -46,18 +46,17 @@ def weight_norm(module, name='weight', dim=0):
     return module
 
 class CC_head(nn.Module):
-    def __init__(self, indim, outdim,scale_cls=10.0, learn_scale=True, normalize=True):
+    def __init__(self, indim, outdim,scale_cls=10.0, learn_scale=True):
         super().__init__()
         self.L = weight_norm(nn.Linear(indim, outdim, bias=False), name='weight', dim=0)
         self.scale_cls = nn.Parameter(
             torch.FloatTensor(1).fill_(scale_cls), requires_grad=learn_scale
         )
-        self.normalize=normalize
 
     def forward(self, features):
         if features.dim() == 4:
-            if self.normalize:
-                features=F.normalize(features, p=2, dim=1, eps=1e-12)
+            # if self.normalize:
+            #     features=F.normalize(features, p=2, dim=1, eps=1e-12)
             features = F.adaptive_avg_pool2d(features, 1).squeeze_(-1).squeeze_(-1)
         assert features.dim() == 2
         x_normalized = F.normalize(features, p=2, dim=1, eps = 1e-12)
@@ -71,9 +70,8 @@ class CC_head(nn.Module):
 
 def create_model(indim, outdim,  
         scale_cls: int =10.0, 
-        learn_scale: bool = True, 
-        normalize: bool = True):
-    return CC_head(indim, outdim, scale_cls, learn_scale, normalize)
+        learn_scale: bool = True):
+    return CC_head(indim, outdim, scale_cls, learn_scale)
     
 if __name__ == "__main__":
     layer = nn.Linear(3, 5, bias=False)

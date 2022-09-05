@@ -165,8 +165,8 @@ class Jigsaw_PN(BaseFewShotModule):
         )
         self.fc_loc = nn.Linear(self.backbone.outdim, 4)
         self.val_test_classifier = get_classifier(task_classifier_name, **task_classifier_params)
-        self.ada_avg_pool2d = nn.AdaptiveAvgPool2d((2, 2))
-        self.ada_max_pool2d = nn.AdaptiveMaxPool2d((2, 2))
+        # self.ada_avg_pool2d = nn.AdaptiveAvgPool2d((2, 2))
+        # self.ada_max_pool2d = nn.AdaptiveMaxPool2d((2, 2))
 
     @torch.no_grad()
     def _batch_gather(self, images):
@@ -178,9 +178,9 @@ class Jigsaw_PN(BaseFewShotModule):
         permute = torch.randperm(n * 4).cuda()
         images_gather = torch.cat(images_gather, dim=0)
         images_gather = images_gather[permute, :, :, :]
-        col1 = torch.cat([images_gather[0:n], images_gather[n:2 * n]], dim=3)
-        col2 = torch.cat([images_gather[2 * n:3 * n], images_gather[3 * n:]], dim=3)
-        images_gather = torch.cat([col1, col2], dim=2)
+        # col1 = torch.cat([images_gather[0:n], images_gather[n:2 * n]], dim=3)
+        # col2 = torch.cat([images_gather[2 * n:3 * n], images_gather[3 * n:]], dim=3)
+        # images_gather = torch.cat([col1, col2], dim=2)
 
         return images_gather, permute, n
 
@@ -202,9 +202,9 @@ class Jigsaw_PN(BaseFewShotModule):
         torch.distributed.broadcast(permute, src=0)
         images_gather = torch.cat(images_gather, dim=0)
         images_gather = images_gather[permute, :, :, :]
-        col1 = torch.cat([images_gather[0:n], images_gather[n:2 * n]], dim=3)
-        col2 = torch.cat([images_gather[2 * n:3 * n], images_gather[3 * n:]], dim=3)
-        images_gather = torch.cat([col1, col2], dim=2)
+        # col1 = torch.cat([images_gather[0:n], images_gather[n:2 * n]], dim=3)
+        # col2 = torch.cat([images_gather[2 * n:3 * n], images_gather[3 * n:]], dim=3)
+        # images_gather = torch.cat([col1, col2], dim=2)
 
         bs = images_gather.shape[0] // num_gpus
         gpu_idx = torch.distributed.get_rank()
@@ -212,7 +212,6 @@ class Jigsaw_PN(BaseFewShotModule):
         return images_gather[bs * gpu_idx:bs * (gpu_idx + 1)], permute, n
 
     def train_forward(self, batch, batch_size, way, shot):
-        # images, _ = batch
 
         data, label, data_jigsaw = batch
 
@@ -223,8 +222,8 @@ class Jigsaw_PN(BaseFewShotModule):
         num_support_samples = way * shot
         heatmap = self.backbone(data)
         # 保持一致
-        heatmap = F.interpolate(heatmap, size=(8, 8), mode='bilinear', align_corners=False)
-        heatmap = self.ada_avg_pool2d(heatmap)
+        # heatmap = F.interpolate(heatmap, size=(8, 8), mode='bilinear', align_corners=False)
+        # heatmap = self.ada_avg_pool2d(heatmap)
 
         data1 = heatmap.reshape([batch_size, -1] + list(heatmap.shape[-3:]))
         data_support = data1[:, :num_support_samples]
@@ -243,21 +242,22 @@ class Jigsaw_PN(BaseFewShotModule):
 
         # compute features
         q = self.backbone(images_gather)
-        q = F.interpolate(q, size=(8, 8), mode='bilinear', align_corners=False)
-        q = self.ada_avg_pool2d(q)
+        # q = F.interpolate(q, size=(8, 8), mode='bilinear', align_corners=False)
+        # q = self.ada_avg_pool2d(q)
 
         if self.hparams.is_DDP:
             q_gather = concat_all_gather(q)
         else:
             q_gather = q
 
-        n, c, h, w = q_gather.shape
-        c1, c2 = q_gather.split([1, 1], dim=2)
-        f1, f2 = c1.split([1, 1], dim=3)
-        f3, f4 = c2.split([1, 1], dim=3)
-        q_gather = torch.cat([f1, f2, f3, f4], dim=0)
-        q_gather = q_gather.view(n * 4, -1)
-
+        # n, c, h, w = q_gather.shape
+        # c1, c2 = q_gather.split([1, 1], dim=2)
+        # f1, f2 = c1.split([1, 1], dim=3)
+        # f3, f4 = c2.split([1, 1], dim=3)
+        # q_gather = torch.cat([f1, f2, f3, f4], dim=0)
+        # q_gather = q_gather.view(n * 4, -1)
+        q_gather = torch.squeeze(torch.nn.functional.max_pool2d(q_gather, (5,5)),-1)
+        q_gather = torch.squeeze(q_gather,-1)
         # clustering branch
         # for way-clustering
         label_clu = torch.LongTensor(
@@ -265,6 +265,7 @@ class Jigsaw_PN(BaseFewShotModule):
         label_clu = label_clu[permute]
         # for image-clustering
         # label_clu = permute % bs_all
+
         q_clu = self.fc_clu(q_gather)
         q_clu = nn.functional.normalize(q_clu, dim=1)
 
@@ -279,7 +280,7 @@ class Jigsaw_PN(BaseFewShotModule):
         num_support_samples = way * shot
         data, _ = batch
         data = self.backbone(data)
-        data = self.ada_max_pool2d(data) # 未知原因
+        # data = self.ada_max_pool2d(data) # 未知原因
         data = data.reshape([batch_size, -1] + list(data.shape[-3:]))
         data_support = data[:, :num_support_samples]
         data_query = data[:, num_support_samples:]

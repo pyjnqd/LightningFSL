@@ -59,7 +59,7 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = True
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
@@ -67,7 +67,7 @@ def config():
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
-    trainer["resume_from_checkpoint"] = None # example: "../results/ProtoNet/version_11/checkpoints/epoch=2-step=1499.ckpt"
+    trainer["resume_from_checkpoint"] = None
 
     # The maximum epochs to run
     trainer["max_epochs"] = 100
@@ -106,20 +106,15 @@ def config():
 
     ##################datamodule configuration###########################
 
-    #important
 
-    #The name of dataset, which should match the name of file
-    #that contains the datamodule.
-    
-    data["train_dataset_name"] = "ImageNet"
-
-    data["train_data_root"] = "/dev/shm/wuhao/"
-
-    data["val_test_dataset_name"] = "ImageNet"
-
-    data["val_test_data_root"] = "/home/wuhao/data/imagenet/"
+    data["train_dataset_name"] = "miniImageNet"
+    data["train_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
+    data["val_dataset_name"] = "miniImageNet"
+    data["val_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
+    data["test_dataset_name"] = "miniImageNet"
+    data["test_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
     #determine whether meta-learning.
-    data["train_batchsize"] = 128
+    data["train_batchsize"] = 256
     
     data["train_num_workers"] = 16
     #the number of tasks
@@ -129,7 +124,7 @@ def config():
     
     #less important
     data["num_gpus"] = num_gpus
-    data["is_FSL_val"]=False # update for new datamodule
+    data["is_FSL_val"] = False
     if data["is_FSL_val"]:
         data["val_batchsize"] = num_gpus*per_gpu_val_batchsize
         data["test_batchsize"] = num_gpus*per_gpu_test_batchsize
@@ -153,7 +148,7 @@ def config():
     #that contains the model.
     model["backbone_name"] = "resnet12"
     #the initial learning rate
-    model["lr"] = 0.1*data["train_batchsize"]/128
+    model["lr"] = 0.1 * data["train_batchsize"]/128
 
 
     #less important
@@ -169,7 +164,7 @@ def config():
     #The name of optimization scheduler
     model["decay_scheduler"] = "cosine"
     model["optim_type"] = "sgd"
-    model["num_classes"] = 1000
+    model["num_classes"] = 64
 
     
 

@@ -11,13 +11,7 @@ import os
 import utils
 from pytorch_lightning.utilities.seed import seed_everything
 from architectures import get_classifier, get_backbone
-def simple_transform(x, beta):
-    zero_tensor = torch.zeros_like(x)
-    x_pos = torch.maximum(x, zero_tensor)
-    x_neg = torch.minimum(x, zero_tensor)
-    x_pos = 1/torch.pow(torch.log(1/(x_pos+1e-5)+1),beta)
-    x_neg = -1/torch.pow(torch.log(1/(-x_neg+1e-5)+1),beta)
-    return x_pos+x_neg
+
 class Few_Shot_CLI(LightningCLI):
     """Add testing, model specifying and loading proccess into LightningCLI.
            Add four config parameters:
@@ -101,7 +95,7 @@ class Few_Shot_CLI(LightningCLI):
 
     def before_fit(self):
         """Load pretrained model."""
-        string = "cuda:3"
+        string = "cuda:0"
         if self.config["load_pretrained"]:
             state = torch.load(self.config["pre_trained_path"], map_location=string)["state_dict"]
 
@@ -138,7 +132,6 @@ class Few_Shot_CLI(LightningCLI):
 if __name__ == '__main__':
     cli = Few_Shot_CLI(
         model_class= BaseFewShotModule, 
-        datamodule_class = None, 
-        # seed_everything_default=1234,
+        datamodule_class = None,
         save_config_callback = RefinedSaverCallback
     )

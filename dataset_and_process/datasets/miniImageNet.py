@@ -31,10 +31,16 @@ class miniImageNet(ImageFolder):
         # for lmdb dataset format 
         LMDB_PATH = os.path.join(root, mode+'.lmdb')
         if mode == 'val' or mode == 'test':
+            # from torchvision.transforms import InterpolationMode
+            # transform = transforms.Compose([
+            #     transforms.Resize(256, interpolation=InterpolationMode.BICUBIC),
+            #     transforms.CenterCrop(224),
+            #     transforms.ToTensor(),
+            #     transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
+            #                             np.array([0.2726, 0.2634, 0.2794]))])
             transform = transforms.Compose([
                 transforms.Resize([92, 92]),
                 transforms.CenterCrop(image_sz),
-
                 transforms.ToTensor(),
                 transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
                                         np.array([0.2726, 0.2634, 0.2794]))])

@@ -24,7 +24,7 @@ def config():
         config_dict["load_pretrained"] = True
         #specify pretrained path for testing.
     if config_dict["load_pretrained"]:
-        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/results/CL/Exemplar/version_1/checkpoints/epoch=1108-step=166349.ckpt"
+        config_dict["pre_trained_path"] = "/home/wuhao/workspace/LightningFSL/resume/MoCo.ckpt"
         #only load the backbone.
         config_dict["load_backbone_only"] = False
 
@@ -46,7 +46,7 @@ def config():
 
     #The logging dirname: logdir/exp_name/
     log_dir = "./results/"
-    exp_name = "CL/Exemplar/"
+    exp_name = "CL/MoCo/"
     
     #Three components of a Lightning Running System
     trainer = {}
@@ -65,11 +65,11 @@ def config():
     if multi_gpu:
         trainer["accelerator"] = "ddp"
         trainer["sync_batchnorm"] = False
-        trainer["gpus"] = [2,3]
+        trainer["gpus"] = [0,1]
         trainer["plugins"] = [{"class_path": "plugins.modified_DDPPlugin"}]
     else:
         trainer["accelerator"] = None
-        trainer["gpus"] = [1]
+        trainer["gpus"] = [2]
         trainer["sync_batchnorm"] = False
     
     # whether resume from a given checkpoint file
@@ -117,14 +117,12 @@ def config():
 
     #The name of dataset, which should match the name of file
     #that contains the datamodule.
-    
     data["train_dataset_name"] = "miniImageNet_contra"
-
-    data["train_data_root"] = "/dev/shm/wuhao/images_imagefolder"
-
-    data["val_test_dataset_name"] = "miniImageNet"
-
-    data["val_test_data_root"] = "/dev/shm/wuhao/images_imagefolder"
+    data["train_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
+    data["val_dataset_name"] = "miniImageNet"
+    data["val_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
+    data["test_dataset_name"] = "miniImageNet"
+    data["test_data_root"] = "/dev/shm/wuhao/mini/images_imagefolder"
 
 
 
@@ -137,7 +135,7 @@ def config():
     
     #less important
     data["num_gpus"] = num_gpus
-    data["is_FSL_val"] = True # update for new datamodule
+    data["is_FSL_val"] = True
     if data["is_FSL_val"]:
         data["val_batchsize"] = num_gpus * per_gpu_val_batchsize
         data["test_batchsize"] = num_gpus * per_gpu_test_batchsize
@@ -160,9 +158,9 @@ def config():
     #The name of feature extractor, which should match the name of file
     #that contains the model.
     model["backbone_name"] = "resnet12"
-    model["is_Exemplar"] = True
+    model["is_Exemplar"] = False
     #the initial learning rate
-    model["lr"] = 0.1 * data["train_batchsize"]/256
+    model["lr"] = 0.1 * data["train_batchsize"] / 256
 
 
     #less important

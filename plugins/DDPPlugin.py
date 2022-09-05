@@ -19,6 +19,3 @@ class modified_DDPPlugin(DDPPlugin):
                          sync_batchnorm, ddp_comm_state, ddp_comm_hook, ddp_comm_wrapper, **kwargs)
         self._ddp_kwargs["find_unused_parameters"] = find_unused_parameters
 
-    
-if __name__ == "__main__":
-    a = modified_DDPPlugin()

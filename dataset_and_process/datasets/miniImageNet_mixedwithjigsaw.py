@@ -55,7 +55,7 @@ class miniImageNetMixedwithJigsaw(miniImageNet):
             transforms.Normalize(np.array([0.4712, 0.4499, 0.4031]),
                                     np.array([0.2726, 0.2634, 0.2794]))])
         self.transform_jigsaw = transforms.Compose([
-            transforms.RandomResizedCrop(patch_sz, scale=(0.2, 1.0)),
+            transforms.RandomResizedCrop(image_sz, scale=(0.2, 1.0)),
             transforms.RandomApply([
                 transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
             ], p=0.8),
@@ -74,7 +74,7 @@ class miniImageNetMixedwithJigsaw(miniImageNet):
         sample = self.loader(path)
         sample_normal = self.transform(sample)
         sample_jigsaw = self.transform_jigsaw(sample)
-        return sample_normal, target,
+        return sample_normal, target, sample_jigsaw
 
 
 

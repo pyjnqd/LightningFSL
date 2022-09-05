@@ -3,6 +3,7 @@ import torch.nn as nn
 from typing import Tuple, List, Optional, Union, Dict
 import torch.nn.functional as F
 from architectures import get_classifier
+
 class CE_Pretrainer(BaseFewShotModule):
     r"""The strandard pretraining procedure adopted in many
         Few-Shot methods using a simple cross-entropy loss.
@@ -83,10 +84,10 @@ class CE_Pretrainer(BaseFewShotModule):
         num_support_samples = way * shot
         data, _ = batch
         data = self.backbone(data)
-        # timm models输出的格式dim不是4，临时改一下shape
-        if data.dim() == 2:
-            import torch
-            data = torch.unsqueeze(torch.unsqueeze(data, -1), -1)
+        # # timm models输出的格式dim不是4，临时改一下shape
+        # if data.dim() == 2:
+        #     import torch
+        #     data = torch.unsqueeze(torch.unsqueeze(data, -1), -1)
         data = data.reshape([batch_size, -1] + list(data.shape[-3:]))
         data_support = data[:, :num_support_samples]
         data_query = data[:, num_support_samples:]
@@ -104,14 +105,13 @@ class CE_Pretrainer(BaseFewShotModule):
     """
         val是ce时，使用，是FSL时，注掉
     """
-    # def validation_step(self, batch, batch_idx):
-    #     logits, labels = self.train_forward(batch)
-    #     # print(logits.shape)
-    #     loss = F.cross_entropy(logits, labels)
-    #     log_loss = self.val_loss(loss)
-    #     accuracy = self.val_acc(logits, labels)
-    #     self.log("val/loss", log_loss)
-    #     self.log("val/acc", accuracy)
+    def validation_step(self, batch, batch_idx):
+        logits, labels = self.train_forward(batch)
+        loss = F.cross_entropy(logits, labels)
+        log_loss = self.val_loss(loss)
+        accuracy = self.val_acc(logits, labels)
+        self.log("val/loss", log_loss)
+        self.log("val/acc", accuracy)
 
 def get_model():
     return CE_Pretrainer

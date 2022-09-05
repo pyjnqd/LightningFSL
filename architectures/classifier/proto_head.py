@@ -48,6 +48,8 @@ class PN_head(nn.Module):
                                    size: [batch_size, num_query, way]
         """
         if features_train.dim() == 5:
+            # if self.normalize: # ?
+            #     features_train = F.normalize(features_train, p=2, dim=2, eps=1e-12)
             features_train = F.adaptive_avg_pool2d(features_train, 1).squeeze_(-1).squeeze_(-1)
         assert features_train.dim() == 3
 
@@ -58,9 +60,11 @@ class PN_head(nn.Module):
         prototypes = torch.mean(features_train.reshape(batch_size, shot, way, -1),dim=1)
         prototypes = F.normalize(prototypes, p=2, dim=2, eps=1e-12)
 
-
+        # if self.normalize:# ?
+        #     features_test = F.normalize(features_test, p=2, dim=2, eps=1e-12)
         if features_test.dim() == 5:
             features_test = F.adaptive_avg_pool2d(features_test, 1).squeeze_(-1).squeeze_(-1)
+
         assert features_test.dim() == 3
 
         if self.metric == "cosine":

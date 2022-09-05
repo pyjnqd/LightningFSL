@@ -1,2 +1,2 @@
-python config/set_config_PN.py
+python config/set_config_testonly.py
 python run.py --config config/config.yaml

@@ -1,6 +1,11 @@
 from .classifier.proto_head import PN_head
 from .classifier.CC_head import CC_head
 from .classifier.SOC import SOC
+from .classifier.LR import Logistic_Regression
+from .classifier.metaopt import MetaoptHead
+from .classifier.KNN import KNN_head
+from .classifier.matchnet_head import MN_head
+
 
 from importlib import import_module
 

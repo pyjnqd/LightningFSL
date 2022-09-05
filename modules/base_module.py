@@ -61,6 +61,8 @@ class BaseFewShotModule(LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.backbone = get_backbone(backbone_name, **backbone_kwargs)
+        # import clip
+        # self.backbone, self.preprocess = clip.load("RN50")
         self.label = torch.arange(way, dtype=torch.int8).repeat(num_query)
         self.label = self.label.type(torch.LongTensor).reshape(-1)
 
@@ -106,8 +108,7 @@ class BaseFewShotModule(LightningModule):
         # label
         # print(batch[0].shape)
         logits = foward_function(batch, batch_size_per_gpu, self.hparams.way, shot)
-        # import pdb
-        # pdb.set_trace()
+
         label = torch.unsqueeze(self.label, 0).repeat(batch_size_per_gpu, 1).reshape(-1).to(logits.device)
         logits = logits.reshape(label.size(0),-1)
         

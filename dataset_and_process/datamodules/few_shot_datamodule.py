@@ -38,11 +38,11 @@ class FewShotDataModule(LightningDataModule):
     def __init__(
         self,
         train_dataset_name: str = "miniImageNet",
-        val_test_dataset_name: str = "miniImageNet",
         train_data_root: str = '',
-        # val_data_root: str = '',
-        # test_data_root: str = '',
-        val_test_data_root: str = '',
+        val_dataset_name: str = 'miniImageNet',
+        val_data_root: str = '',
+        test_dataset_name: str = 'miniImageNet',
+        test_data_root: str = '',
         is_meta: bool = False,
         train_batchsize: int = 32,
         val_batchsize: int = 4,
@@ -66,10 +66,11 @@ class FewShotDataModule(LightningDataModule):
     ) -> None:
         super().__init__()
         self.train_data_root = train_data_root
-        self.val_data_root = val_test_data_root
-        self.test_data_root = val_test_data_root
+        self.val_data_root = val_data_root
+        self.test_data_root = test_data_root
         self.train_dataset_name = train_dataset_name
-        self.val_test_dataset_name = val_test_dataset_name
+        self.val_dataset_name = val_dataset_name
+        self.test_dataset_name = test_dataset_name
         self.train_num_workers = train_num_workers
         self.val_num_workers = val_num_workers
         self.is_DDP = is_DDP
@@ -96,31 +97,21 @@ class FewShotDataModule(LightningDataModule):
         self.train_dataset_params = train_dataset_params
         self.val_test_dataset_params = val_test_dataset_params
         self.is_FSL_val = is_FSL_val
-    @property
-    def train_dataset_cls(self):
-        """Obtain the dataset class
-        """
-        return get_dataset(self.train_dataset_name)
-    @property    
-    def val_test_dataset_cls(self):
-        """Obtain the dataset class
-        """
-        return get_dataset(self.val_test_dataset_name)
-    
+
     def set_train_dataset(self):
-        self.train_dataset = self.train_dataset_cls(
+        self.train_dataset = get_dataset(self.train_dataset_name)(
             self.train_data_root,
             mode="train",
             **self.train_dataset_params
         )
     def set_val_dataset(self):
-        self.val_dataset = self.val_test_dataset_cls(
+        self.val_dataset = get_dataset(self.val_dataset_name)(
             self.val_data_root,
             mode="val",
             **self.val_test_dataset_params
         )
     def set_test_dataset(self):
-        self.test_dataset = self.val_test_dataset_cls(
+        self.test_dataset = get_dataset(self.test_dataset_name)(
             self.test_data_root,
             mode="test",
             # mode="all",#ISIC
@@ -166,7 +157,7 @@ class FewShotDataModule(LightningDataModule):
         loader = DataLoader(
             self.train_dataset,
             batch_size = 1 if self.train_batch_sampler is not None\
-                         else self.train_batch_size//self.num_gpus,
+                         else self.train_batch_size // self.num_gpus,
             shuffle = False if self.train_batch_sampler is not None\
                       or self.train_sampler is not None else True,
             num_workers = self.train_num_workers,

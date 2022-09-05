@@ -1,6 +1,6 @@
 from torch.nn import Module
 import torch
-from architectures import PN_head, get_backbone
+from architectures import PN_head, get_backbone, Logistic_Regression, MetaoptHead
 import torch.nn.functional as F
 from . import utils
 from .base_module import BaseFewShotModule
